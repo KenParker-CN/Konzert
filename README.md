@@ -16,12 +16,12 @@
 
 ## 技术栈
 
-| 层 | 技术 |
-| --- | --- |
-| 前端 | Next.js 16（`output: "export"` 静态导出）、React 19、TypeScript、Tailwind CSS 4、lucide-react |
-| 桌面/移动壳 | Tauri 2（dialog / fs / log 插件，protocol-asset） |
-| 音频解析 | music-metadata（标签）、@audio/decode-aac（AAC 解码） |
-| 数据存储 | IndexedDB（曲库、封面、播放记录全部保存在本机） |
+| 层          | 技术                                                                                          |
+|-------------|-----------------------------------------------------------------------------------------------|
+| 前端        | Next.js 16（`output: "export"` 静态导出）、React 19、TypeScript、Tailwind CSS 4、lucide-react |
+| 桌面/移动壳 | Tauri 2（dialog / fs / log 插件，protocol-asset）                                             |
+| 音频解析    | music-metadata（标签）、@audio/decode-aac（AAC 解码）                                         |
+| 数据存储    | IndexedDB（曲库、封面、播放记录全部保存在本机）                                               |
 
 ## 目录结构
 
