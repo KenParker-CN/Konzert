@@ -9,8 +9,12 @@ import type { Track } from "@/lib/types";
 
 interface TrackListProps {
   tracks: Track[];
-  /** 是否显示音轨序号列。 */
+  /** 序号是否优先使用标签中的音轨号（否则显示列表位置）。 */
   showIndex?: boolean;
+  /** 是否显示序号数字；隐藏后仍保留悬停播放按钮的占位。 */
+  showNumber?: boolean;
+  /** 点击播放时的队列；缺省用 tracks 本身（分页列表可传完整列表）。 */
+  queueTracks?: Track[];
   /** 传入后显示「从曲库移除」按钮。 */
   onRemove?: (track: Track) => void;
   emptyMessage?: string;
@@ -19,11 +23,14 @@ interface TrackListProps {
 export function TrackList({
   tracks,
   showIndex = true,
+  showNumber = true,
+  queueTracks,
   onRemove,
   emptyMessage = "这里还没有曲目",
 }: TrackListProps) {
   const player = usePlayer();
   const { favorites, toggleFavorite, settings } = useLibrary();
+  const queue = queueTracks ?? tracks;
 
   if (tracks.length === 0) {
     return (
@@ -46,11 +53,11 @@ export function TrackList({
             key={track.id}
             role="button"
             tabIndex={0}
-            onClick={() => player.playTrack(track, tracks)}
+            onClick={() => player.playTrack(track, queue)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                player.playTrack(track, tracks);
+                player.playTrack(track, queue);
               }
             }}
             className={`group grid cursor-default grid-cols-[2.25rem_1fr_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors sm:grid-cols-[2.25rem_minmax(0,2.2fr)_minmax(0,1.4fr)_4.5rem_auto] ${
@@ -82,13 +89,15 @@ export function TrackList({
                 </>
               ) : (
                 <>
-                  <span
-                    className={`text-xs tabular-nums group-hover:hidden ${
-                      isCurrent ? "text-blue-600" : "text-zinc-400"
-                    }`}
-                  >
-                    {showIndex ? (track.trackNo ?? index + 1) : index + 1}
-                  </span>
+                  {showNumber ? (
+                    <span
+                      className={`text-xs tabular-nums group-hover:hidden ${
+                        isCurrent ? "text-blue-600" : "text-zinc-400"
+                      }`}
+                    >
+                      {showIndex ? (track.trackNo ?? index + 1) : index + 1}
+                    </span>
+                  ) : null}
                   <button
                     type="button"
                     aria-label={`播放 ${track.title}`}

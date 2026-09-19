@@ -10,6 +10,16 @@ interface FileSystemDirectoryHandle {
   >;
 }
 
+// 句柄权限 API 目前仅 Chromium 实现，内置 DOM 类型未包含。
+interface FileSystemFileHandle {
+  queryPermission?(
+    descriptor?: { mode?: "read" | "readwrite" },
+  ): Promise<PermissionState>;
+  requestPermission?(
+    descriptor?: { mode?: "read" | "readwrite" },
+  ): Promise<PermissionState>;
+}
+
 interface DirectoryPickerOptions {
   id?: string;
   mode?: "read" | "readwrite";

@@ -47,6 +47,12 @@ function toBlob(data: Uint8Array, mimeType: string): Blob {
   return new Blob([copy.buffer], { type: mimeType });
 }
 
+/** 合并多值艺术家标签为单个字符串；值为空时返回空串，由调用方回退。 */
+function joinArtists(values: string[] | undefined): string {
+  const cleaned = (values ?? []).map(cleanText).filter(Boolean);
+  return cleaned.join("; ");
+}
+
 export async function parseAudioFile(
   file: File | Blob,
   fileName: string,
@@ -60,9 +66,17 @@ export async function parseAudioFile(
   const format = metadata.format;
 
   const title = cleanText(common.title) || titleFromFileName(fileName);
+  // 多值标签（ID3v2.4 等）时 music-metadata 会给出数组；用「; 」合并保存，
+  // 展示层再按分隔符拆分成独立艺术家，避免与名字本身可能含有的「/」混淆。
   const artist =
-    cleanText(common.artist) || cleanText(common.albumartist) || UNKNOWN_ARTIST;
-  const albumArtist = cleanText(common.albumartist) || artist;
+    joinArtists(common.artists) ||
+    cleanText(common.artist) ||
+    cleanText(common.albumartist) ||
+    UNKNOWN_ARTIST;
+  const albumArtist =
+    joinArtists(common.albumartists) ||
+    cleanText(common.albumartist) ||
+    artist;
   const album = cleanText(common.album) || UNKNOWN_ALBUM;
   const genre = common.genre?.length ? cleanText(common.genre[0]) : "";
   const year = typeof common.year === "number" ? common.year : null;
