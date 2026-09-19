@@ -87,7 +87,7 @@ export function SettingsView() {
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <HardDrive className="h-4 w-4 text-violet-600" />
+          <HardDrive className="h-4 w-4 text-blue-600" />
           存储与曲库
         </h2>
         <dl className="mt-4 grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
@@ -161,7 +161,7 @@ export function SettingsView() {
       {/* 播放偏好 */}
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <Disc3 className="h-4 w-4 text-violet-600" />
+          <Disc3 className="h-4 w-4 text-blue-600" />
           播放偏好
         </h2>
 
@@ -195,7 +195,7 @@ export function SettingsView() {
               aria-pressed={settings.shuffle}
               className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 transition ${
                 settings.shuffle
-                  ? "bg-violet-500/15 text-violet-700"
+                  ? "bg-blue-500/15 text-blue-700"
                   : "bg-zinc-950/5 text-zinc-500 hover:text-zinc-700"
               }`}
             >
@@ -212,7 +212,7 @@ export function SettingsView() {
               className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 transition ${
                 settings.repeat === "off"
                   ? "bg-zinc-950/5 text-zinc-500 hover:text-zinc-700"
-                  : "bg-violet-500/15 text-violet-700"
+                  : "bg-blue-500/15 text-blue-700"
               }`}
             >
               {settings.repeat === "one" ? (
@@ -242,7 +242,7 @@ export function SettingsView() {
       {/* 最近一次扫描 */}
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <Info className="h-4 w-4 text-violet-600" />
+          <Info className="h-4 w-4 text-blue-600" />
           最近一次扫描
         </h2>
         {lastScan ? (
@@ -266,7 +266,7 @@ export function SettingsView() {
       {/* 关于 */}
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <Info className="h-4 w-4 text-violet-600" />
+          <Info className="h-4 w-4 text-blue-600" />
           关于 Konzert
         </h2>
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">

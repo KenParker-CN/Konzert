@@ -34,7 +34,7 @@ export function EmptyState({
 
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-8 py-16 text-center">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-violet-500/20 to-sky-400/15 text-violet-700">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500/20 to-blue-400/10 text-blue-700">
         <AudioLines className="h-7 w-7" />
       </span>
       <div>

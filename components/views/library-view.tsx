@@ -137,7 +137,7 @@ export function LibraryView() {
           <span className="text-zinc-300">·</span>
           <span>{artists.length} 位艺术家</span>
           {query ? (
-            <span className="text-violet-600">已按「{query}」筛选</span>
+            <span className="text-blue-600">已按「{query}」筛选</span>
           ) : null}
           {tab === "songs" ? (
             <label className="ml-auto flex items-center gap-2 text-zinc-500">
@@ -145,7 +145,7 @@ export function LibraryView() {
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as TrackSort)}
-                className="rounded-lg border bg-zinc-950/5 px-2 py-1 text-xs text-zinc-700 focus:border-violet-500/40 focus:outline-none"
+                className="rounded-lg border bg-zinc-950/5 px-2 py-1 text-xs text-zinc-700 focus:border-blue-500/40 focus:outline-none"
               >
                 {(
                   Object.entries(TRACK_SORT_LABELS) as [TrackSort, string][]

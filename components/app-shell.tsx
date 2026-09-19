@@ -70,22 +70,22 @@ export function AppShell() {
         >
           {/* 扫描进度 */}
           {progress ? (
-            <div className="flex items-center gap-3 border-b border-zinc-200 bg-violet-500/10 px-6 py-2.5 text-xs text-violet-700">
+            <div className="flex items-center gap-3 border-b border-zinc-200 bg-blue-500/10 px-6 py-2.5 text-xs text-blue-700">
               <LoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin" />
               <span className="shrink-0 font-medium">
                 {PHASE_LABELS[progress.phase]}
               </span>
               {progress.total > 0 ? (
-                <span className="shrink-0 tabular-nums text-violet-700/80">
+                <span className="shrink-0 tabular-nums text-blue-700/80">
                   {progress.processed}/{progress.total}
                 </span>
               ) : progress.processed > 0 ? (
-                <span className="shrink-0 tabular-nums text-violet-700/80">
+                <span className="shrink-0 tabular-nums text-blue-700/80">
                   已发现 {progress.processed}
                 </span>
               ) : null}
               <span
-                className="min-w-0 flex-1 truncate text-violet-700/60"
+                className="min-w-0 flex-1 truncate text-blue-700/60"
                 title={progress.label}
               >
                 {progress.label}
@@ -93,7 +93,7 @@ export function AppShell() {
               <button
                 type="button"
                 onClick={cancelScan}
-                className="shrink-0 rounded-full border border-zinc-300 px-2.5 py-1 text-[11px] text-violet-700 transition hover:bg-zinc-950/5"
+                className="shrink-0 rounded-full border border-zinc-300 px-2.5 py-1 text-[11px] text-blue-700 transition hover:bg-zinc-950/5"
               >
                 取消
               </button>
@@ -121,9 +121,9 @@ export function AppShell() {
 
           {/* 拖放提示 */}
           {dragging ? (
-            <div className="pointer-events-none absolute inset-3 z-40 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-violet-500/50 bg-white/70 backdrop-blur-sm">
-              <Upload className="h-7 w-7 text-violet-600" />
-              <p className="text-sm text-violet-700">
+            <div className="pointer-events-none absolute inset-3 z-40 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-blue-500/50 bg-white/70 backdrop-blur-sm">
+              <Upload className="h-7 w-7 text-blue-600" />
+              <p className="text-sm text-blue-700">
                 松开即可导入音频文件或整个文件夹
               </p>
             </div>

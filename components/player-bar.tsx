@@ -88,7 +88,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               onClick={player.toggleShuffle}
               className={`rounded-full p-2 transition ${
                 player.shuffle
-                  ? "text-violet-600"
+                  ? "text-blue-600"
                   : "text-zinc-500 hover:text-zinc-700"
               }`}
             >
@@ -142,7 +142,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               className={`rounded-full p-2 transition ${
                 player.repeat === "off"
                   ? "text-zinc-500 hover:text-zinc-700"
-                  : "text-violet-600"
+                  : "text-blue-600"
               }`}
             >
               {player.repeat === "one" ? (

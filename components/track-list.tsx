@@ -55,7 +55,7 @@ export function TrackList({
             }}
             className={`group grid cursor-default grid-cols-[2.25rem_1fr_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors sm:grid-cols-[2.25rem_minmax(0,2.2fr)_minmax(0,1.4fr)_4.5rem_auto] ${
               isCurrent
-                ? "bg-violet-500/10 ring-1 ring-violet-500/25"
+                ? "bg-blue-500/10 ring-1 ring-blue-500/25"
                 : "hover:bg-zinc-950/5"
             }`}
           >
@@ -64,9 +64,9 @@ export function TrackList({
               {isPlayingThis ? (
                 <>
                   <span className="flex h-4 items-end gap-0.5 group-hover:hidden">
-                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-violet-500" />
-                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-violet-500" />
-                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-violet-500" />
+                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-blue-500" />
+                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-blue-500" />
+                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-blue-500" />
                   </span>
                   <button
                     type="button"
@@ -84,7 +84,7 @@ export function TrackList({
                 <>
                   <span
                     className={`text-xs tabular-nums group-hover:hidden ${
-                      isCurrent ? "text-violet-600" : "text-zinc-400"
+                      isCurrent ? "text-blue-600" : "text-zinc-400"
                     }`}
                   >
                     {showIndex ? (track.trackNo ?? index + 1) : index + 1}
@@ -115,7 +115,7 @@ export function TrackList({
               <div className="min-w-0">
                 <p
                   className={`truncate text-sm ${
-                    isCurrent ? "text-violet-700" : "text-zinc-800"
+                    isCurrent ? "text-blue-700" : "text-zinc-800"
                   }`}
                   title={track.title}
                 >
