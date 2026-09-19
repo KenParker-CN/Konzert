@@ -5,16 +5,27 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "preview": "npx --yes serve out -l 4173",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@audio/decode-aac": "^1.5.0",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tauri-apps/plugin-fs": "^2.5.2",
+    "lucide-react": "^1.47.0",
+    "music-metadata": "^11.15.0",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

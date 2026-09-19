@@ -1,0 +1,18 @@
+{
+  "tasks": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "imports": {
+    "react": "npm:react",
+    "react-dom": "npm:react-dom",
+    "next": "npm:next"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window", "dom"],
+    "strict": true
+  }
+}

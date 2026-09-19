@@ -1,26 +1,153 @@
 @import "tailwindcss";
 
+/* Konzert 是本地优先的桌面级播放器，固定使用浅色主题。 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --app-bg: #f4f4f7;
+  --app-accent: #7c3aed;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background:
+    radial-gradient(
+      1200px 800px at 12% -10%,
+      rgba(124, 58, 237, 0.09),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 700px at 100% 0%,
+      rgba(14, 165, 233, 0.07),
+      transparent 55%
+    ),
+    var(--app-bg);
+  background-attachment: fixed;
+  color: #27272a;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* 桌面应用里不需要移动端的点击高亮 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 细滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(24, 24, 27, 0.18);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 24, 27, 0.3);
+  background-clip: content-box;
+}
+
+/* 进度条与音量条：去掉浏览器默认外观，滑块仅在悬停时出现 */
+input[type="range"].konzert-range {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"].konzert-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(24, 24, 27, 0.14);
+}
+
+input[type="range"].konzert-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border: none;
+  border-radius: 9999px;
+  background: #18181b;
+  box-shadow: 0 1px 4px rgba(24, 24, 27, 0.35);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+input[type="range"].konzert-range:hover::-webkit-slider-thumb,
+input[type="range"].konzert-range:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+input[type="range"].konzert-range::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(24, 24, 27, 0.14);
+}
+
+input[type="range"].konzert-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 9999px;
+  background: #18181b;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+input[type="range"].konzert-range:hover::-moz-range-thumb,
+input[type="range"].konzert-range:focus-visible::-moz-range-thumb {
+  opacity: 1;
+}
+
+/* 正在播放的跳动条 */
+@keyframes konzert-eq {
+  0%,
+  100% {
+    transform: scaleY(0.28);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.konzert-eq-bar {
+  transform-origin: bottom;
+  animation: konzert-eq 900ms ease-in-out infinite;
+}
+
+.konzert-eq-bar:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.konzert-eq-bar:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+/* 应用标题栏拖拽区域（Tauri 桌面窗口） */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+}
+
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] input {
+  -webkit-app-region: no-drag;
+}
+

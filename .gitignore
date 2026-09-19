@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+/.idea/
+
+# local logs & build artifacts
+build.log
+lint-report.json
+theme-dump.txt
+npm-install*.log
+
