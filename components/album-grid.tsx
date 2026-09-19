@@ -49,7 +49,7 @@ export function AlbumGrid({
               type="button"
               aria-label={`播放专辑 ${album.album}`}
               onClick={() => player.playQueue(album.tracks, 0)}
-              className="absolute right-2.5 bottom-2.5 flex h-10 w-10 translate-y-1.5 items-center justify-center rounded-full bg-violet-500 text-white opacity-0 shadow-xl shadow-zinc-900/20 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-violet-600 focus-visible:translate-y-0 focus-visible:opacity-100"
+              className="absolute right-2.5 bottom-2.5 flex h-10 w-10 translate-y-1.5 items-center justify-center rounded-full bg-blue-500 text-white opacity-0 shadow-xl shadow-zinc-900/20 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-blue-600 focus-visible:translate-y-0 focus-visible:opacity-100"
             >
               <Play className="ml-0.5 h-4.5 w-4.5 fill-current" />
             </button>

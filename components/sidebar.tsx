@@ -88,7 +88,7 @@ export function Sidebar() {
               }`}
             >
               <Icon
-                className={`h-4 w-4 ${active ? "text-violet-600" : ""}`}
+                className={`h-4 w-4 ${active ? "text-blue-600" : ""}`}
                 fill={item.id === "favorites" && active ? "currentColor" : "none"}
               />
               {item.label}

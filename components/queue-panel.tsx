@@ -61,7 +61,7 @@ export function QueuePanel({ open, onClose }: QueuePanelProps) {
                 <div
                   key={`${track.id}-${index}`}
                   className={`group flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${
-                    isCurrent ? "bg-violet-500/10" : "hover:bg-zinc-950/5"
+                    isCurrent ? "bg-blue-500/10" : "hover:bg-zinc-950/5"
                   }`}
                 >
                   <button
@@ -78,7 +78,7 @@ export function QueuePanel({ open, onClose }: QueuePanelProps) {
                     <span className="min-w-0">
                       <span
                         className={`block truncate text-xs ${
-                          isCurrent ? "text-violet-700" : "text-zinc-600"
+                          isCurrent ? "text-blue-700" : "text-zinc-600"
                         }`}
                       >
                         {track.title}

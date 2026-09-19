@@ -8,15 +8,15 @@
 :root {
   color-scheme: light;
   --app-bg: #f4f4f7;
-  --app-accent: #7c3aed;
+  --app-accent: #1967d2;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* 品牌主色对齐应用强调色 --app-accent (#7c3aed) */
-  --primary: oklch(0.541 0.281 293.009);
+  /* 品牌主色对齐应用图标强调色 --app-accent (#1967d2) */
+  --primary: oklch(0.531 0.191 258);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -27,7 +27,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.541 0.281 293.009);
+  --ring: oklch(0.531 0.191 258);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -54,12 +54,12 @@ body {
   background:
     radial-gradient(
       1200px 800px at 12% -10%,
-      rgba(124, 58, 237, 0.09),
+      rgba(25, 103, 210, 0.1),
       transparent 60%
     ),
     radial-gradient(
       900px 700px at 100% 0%,
-      rgba(14, 165, 233, 0.07),
+      rgba(25, 103, 210, 0.06),
       transparent 55%
     ),
     var(--app-bg);
