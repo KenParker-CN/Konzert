@@ -1,10 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import { ArrowLeft, Play, Shuffle } from "lucide-react";
 import { CoverArt } from "@/components/cover-art";
 import { TrackList } from "@/components/track-list";
+import { groupWorks } from "@/lib/catalog";
 import {
   formatBitrate,
+  formatDuration,
   formatSampleRate,
   formatTotalDuration,
 } from "@/lib/format";
@@ -17,6 +20,9 @@ export function AlbumDetail({ album }: { album: AlbumSummary }) {
   const { closeAlbum } = useNav();
   const player = usePlayer();
   const { removeTracks } = useLibrary();
+
+  // 古典作品分组：标题冒号前内容相同的乐章归到同一作品名下。
+  const sections = useMemo(() => groupWorks(album.tracks), [album.tracks]);
 
   const first = album.tracks[0];
   const lossless = album.tracks.every((track) => track.lossless);
@@ -83,12 +89,45 @@ export function AlbumDetail({ album }: { album: AlbumSummary }) {
         </div>
       </header>
 
-      <TrackList
-        tracks={album.tracks}
-        showIndex
-        onRemove={(track) => void removeTracks([track.id])}
-        emptyMessage="这张专辑没有可播放的曲目"
-      />
+      <div className="flex flex-col gap-3">
+        {sections.map((section) =>
+          section.work ? (
+            <section
+              key={section.key}
+              className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
+            >
+              <header className="flex items-baseline justify-between gap-3 border-b border-zinc-200 bg-zinc-950/[0.03] px-4 py-2.5">
+                <h2
+                  className="truncate text-sm font-medium text-zinc-800"
+                  title={section.work}
+                >
+                  {section.work}
+                </h2>
+                <span className="shrink-0 text-xs tabular-nums text-zinc-500">
+                  {section.tracks.length} 乐章 · {formatDuration(section.duration)}
+                </span>
+              </header>
+              <div className="p-1.5">
+                <TrackList
+                  tracks={section.tracks}
+                  showIndex
+                  queueTracks={album.tracks}
+                  onRemove={(track) => void removeTracks([track.id])}
+                />
+              </div>
+            </section>
+          ) : (
+            <TrackList
+              key={section.key}
+              tracks={section.tracks}
+              showIndex
+              queueTracks={album.tracks}
+              onRemove={(track) => void removeTracks([track.id])}
+              emptyMessage="这张专辑没有可播放的曲目"
+            />
+          ),
+        )}
+      </div>
     </div>
   );
 }

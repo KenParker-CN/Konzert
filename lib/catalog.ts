@@ -79,7 +79,7 @@ function normalize(value: string): string {
  * 含分隔符的艺人。
  */
 const ARTIST_SPLIT_PATTERN =
-  /\s*(?:;|；|、|×)\s*|\s+\/\s+|\s+(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i;
+  /\s*[/,;；、&×]\s*|\s+\/\s+|\s+(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i;
 
 export function splitArtists(value: string): string[] {
   const trimmed = normalize(value);
@@ -187,7 +187,7 @@ export function sortAlbums(
   const sign = dir === "desc" ? -1 : 1;
   const sorted = [...albums];
   sorted.sort((a, b) => {
-    let result = 0;
+    let result: number;
     switch (sort) {
       case "album":
         result =
@@ -339,4 +339,72 @@ export function searchTracks(tracks: Track[], query: string): Track[] {
       (field) => field.toLowerCase().includes(needle),
     ),
   );
+}
+
+export interface WorkSection {
+  /** 分组内稳定键；未参与分组的曲目使用曲目 id。 */
+  key: string;
+  /** 作品名（首个冒号前的内容）；null 表示未参与分组的普通曲目。 */
+  work: string | null;
+  tracks: Track[];
+  duration: number;
+}
+
+/** 作品前缀：标题首个「:」或「：」之前的内容；无冒号或冒号在开头时为 null。 */
+function workKeyOf(title: string): string | null {
+  const trimmed = title.trim();
+  if (!trimmed) return null;
+  const index = trimmed.search(/[:：]/);
+  if (index <= 0) return null;
+  return trimmed.slice(0, index).trim().toLowerCase();
+}
+
+/** 作品显示名：保留首次出现时的原文写法。 */
+function workTitleOf(title: string): string {
+  const trimmed = title.trim();
+  const index = trimmed.search(/[:：]/);
+  return index > 0 ? trimmed.slice(0, index).trim() : trimmed;
+}
+
+/**
+ * 古典作品分组：曲目标题第一个冒号之前内容相同的曲目归为一组
+ * （如「第五交响曲: 第一乐章」系列），归组至少需要两首曲目；
+ * 未参与分组的曲目保持原位置普通显示。顺序按首次出现位置，段内保持专辑曲目顺序。
+ */
+export function groupWorks(tracks: Track[]): WorkSection[] {
+  const counts = new Map<string, number>();
+  for (const track of tracks) {
+    const key = workKeyOf(track.title);
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const sections: WorkSection[] = [];
+  const sectionByKey = new Map<string, WorkSection>();
+  for (const track of tracks) {
+    const key = workKeyOf(track.title);
+    const shared = key !== null && (counts.get(key) ?? 0) >= 2;
+    if (!shared) {
+      sections.push({
+        key: `single:${track.id}`,
+        work: null,
+        tracks: [track],
+        duration: track.duration || 0,
+      });
+      continue;
+    }
+    let section = sectionByKey.get(key);
+    if (!section) {
+      section = {
+        key: `work:${key}`,
+        work: workTitleOf(track.title),
+        tracks: [],
+        duration: 0,
+      };
+      sectionByKey.set(key, section);
+      sections.push(section);
+    }
+    section.tracks.push(track);
+    section.duration += track.duration || 0;
+  }
+  return sections;
 }
