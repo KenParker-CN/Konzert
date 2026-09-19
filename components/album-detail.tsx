@@ -96,12 +96,22 @@ export function AlbumDetail({ album }: { album: AlbumSummary }) {
               key={section.key}
               className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
             >
-              <header className="flex items-baseline justify-between gap-3 border-b border-zinc-200 bg-zinc-950/[0.03] px-4 py-2.5">
+              <header className="flex items-baseline justify-between gap-3 border-b border-zinc-200 bg-zinc-950/3 px-4 py-2.5">
                 <h2
                   className="truncate text-sm font-medium text-zinc-800"
-                  title={section.work}
+                  title={
+                    section.composer
+                      ? `${section.work} · ${section.composer}`
+                      : (section.work ?? "")
+                  }
                 >
                   {section.work}
+                  {section.composer ? (
+                    <span className="font-normal text-zinc-500">
+                      {" "}
+                      by {section.composer}
+                    </span>
+                  ) : null}
                 </h2>
                 <span className="shrink-0 text-xs tabular-nums text-zinc-500">
                   {section.tracks.length} 乐章 · {formatDuration(section.duration)}

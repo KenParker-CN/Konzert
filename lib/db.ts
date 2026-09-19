@@ -125,7 +125,11 @@ export async function loadTracks(): Promise<Track[]> {
   const tracks = await withStore<Track[]>(TRACK_STORE, "readonly", (store) =>
     store.getAll() as IDBRequest<Track[]>,
   );
-  return tracks ?? [];
+  // 旧版本入库的记录没有 composer 字段，读取时统一补默认值。
+  return (tracks ?? []).map((track) => ({
+    ...track,
+    composer: track.composer ?? "",
+  }));
 }
 
 export async function saveTracks(tracks: Track[]): Promise<void> {

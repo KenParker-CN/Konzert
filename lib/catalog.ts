@@ -346,6 +346,8 @@ export interface WorkSection {
   key: string;
   /** 作品名（首个冒号前的内容）；null 表示未参与分组的普通曲目。 */
   work: string | null;
+  /** 作品作曲家（组内曲目标签去重合并）；无标签时为空串。 */
+  composer: string;
   tracks: Track[];
   duration: number;
 }
@@ -364,6 +366,21 @@ function workTitleOf(title: string): string {
   const trimmed = title.trim();
   const index = trimmed.search(/[:：]/);
   return index > 0 ? trimmed.slice(0, index).trim() : trimmed;
+}
+
+/** 组内作曲家：按曲目顺序去重合并（忽略大小写），无标签时返回空串。 */
+function composersOf(tracks: Track[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const track of tracks) {
+    const value = track.composer.trim();
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    parts.push(value);
+  }
+  return parts.join("; ");
 }
 
 /**
@@ -387,6 +404,7 @@ export function groupWorks(tracks: Track[]): WorkSection[] {
       sections.push({
         key: `single:${track.id}`,
         work: null,
+        composer: "",
         tracks: [track],
         duration: track.duration || 0,
       });
@@ -397,6 +415,7 @@ export function groupWorks(tracks: Track[]): WorkSection[] {
       section = {
         key: `work:${key}`,
         work: workTitleOf(track.title),
+        composer: "",
         tracks: [],
         duration: 0,
       };
@@ -405,6 +424,7 @@ export function groupWorks(tracks: Track[]): WorkSection[] {
     }
     section.tracks.push(track);
     section.duration += track.duration || 0;
+    section.composer = composersOf(section.tracks);
   }
   return sections;
 }

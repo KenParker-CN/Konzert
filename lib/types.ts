@@ -21,6 +21,8 @@ export interface Track {
   title: string;
   artist: string;
   albumArtist: string;
+  /** 作曲家；标签缺失时为空串（旧版入库记录亦为空串）。 */
+  composer: string;
   album: string;
   genre: string;
   year: number | null;
