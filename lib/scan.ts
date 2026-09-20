@@ -342,12 +342,17 @@ export function buildOutcome(
     // 文件大小一致即视为内容未变化，直接复用（同时保住封面与播放统计）。
     const needsBitDepthRefresh =
       existing != null && existing.lossless && existing.bitDepth == null;
+    const needsCopyrightRefresh =
+      existing != null &&
+      !existing.copyright?.trim() &&
+      Boolean(metadata.copyright?.trim());
     if (
       existing &&
       candidate.fileSize > 0 &&
       existing.fileSize === candidate.fileSize &&
       existing.duration > 0 &&
-      !needsBitDepthRefresh
+      !needsBitDepthRefresh &&
+      !needsCopyrightRefresh
     ) {
       unchanged += 1;
       continue;

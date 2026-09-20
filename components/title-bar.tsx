@@ -17,6 +17,12 @@ function safeGetCurrentWindow() {
 
 export function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isTauri, setIsTauri] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsTauri(isTauriRuntime()));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const handleStartDragging = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -97,12 +103,14 @@ export function TitleBar() {
     }
   };
 
+  if (!isTauri) return null;
+
   return (
     <div className="flex h-8 items-center justify-between border-b border-zinc-200 bg-zinc-950/5 backdrop-blur-xl">
       {/* Drag region for window dragging */}
       <div
         data-tauri-drag-region
-        className="flex flex-1 items-center gap-2.5 px-5 select-none"
+        className="flex h-full flex-1 items-center gap-2.5 px-5 select-none"
         onMouseDown={handleStartDragging}
         onDoubleClick={handleDoubleClick}
       >

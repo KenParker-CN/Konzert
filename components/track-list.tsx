@@ -2,8 +2,21 @@
 
 import { Heart, ListPlus, Pause, Play, Plus, Trash } from "lucide-react";
 import { CoverArt } from "@/components/cover-art";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { albumKeyOf, artistNamesOf } from "@/lib/catalog";
+import { CatalogTitle } from "@/components/catalog-title";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
+import { useNav } from "@/lib/nav-provider";
 import { usePlayer } from "@/lib/player-provider";
 import type { Track } from "@/lib/types";
 
@@ -23,6 +36,7 @@ interface TrackListProps {
   trackAlbum?: (track: Track) => string | null;
   onRemove?: (track: Track) => void;
   emptyMessage?: string;
+  showCoverArt?: boolean;
 }
 
 export function TrackList({
@@ -35,9 +49,11 @@ export function TrackList({
   emptyMessage = "这里还没有曲目",
   trackArtist,
   trackAlbum,
+  showCoverArt = false,
 }: TrackListProps) {
   const player = usePlayer();
-  const { favorites, toggleFavorite, settings } = useLibrary();
+  const { favorites, toggleFavorite, settings, removeTracks } = useLibrary();
+  const { openAlbum, openArtist } = useNav();
   const queue = queueTracks ?? tracks;
   const titleFor = titleOf ?? ((track: Track) => track.title);
   const artistFor = trackArtist ?? ((track: Track) => track.artist);
@@ -66,8 +82,9 @@ export function TrackList({
         const album = albumFor(track);
 
         return (
-          <div
-            key={track.id}
+          <ContextMenu key={track.id}>
+            <ContextMenuTrigger>
+              <div
             role="button"
             tabIndex={0}
             onClick={() => player.playTrack(track, queue)}
@@ -132,26 +149,28 @@ export function TrackList({
 
             {/* 标题 + 艺术家 */}
             <div className="flex min-w-0 items-center gap-3">
-              <CoverArt
-                coverId={track.coverId}
-                label={track.album}
-                className="h-9 w-9 shrink-0 rounded"
-                labelClassName="text-xs"
-              />
+              {showCoverArt ? (
+                <CoverArt
+                  coverId={track.coverId}
+                  label={track.album}
+                  className="h-9 w-9 shrink-0 rounded"
+                  labelClassName="text-xs"
+                />
+              ) : null}
               <div className="min-w-0">
-                <p
+                <div
                   className={`truncate text-sm ${
                     isCurrent ? "text-blue-700" : "text-zinc-800"
                   }`}
                   title={titleFor(track)}
                 >
-                  {titleFor(track)}
-                </p>
+                  <CatalogTitle
+                    title={titleFor(track)}
+                    composer={track.composer}
+                  />
+                </div>
                 {artist ? (
-                  <p
-                    className="truncate text-xs text-zinc-600"
-                    title={artist}
-                  >
+                  <p className="truncate text-xs text-zinc-600" title={artist}>
                     {wasLastPlayed ? `${artist} · 上次播放` : artist}
                   </p>
                 ) : null}
@@ -230,7 +249,47 @@ export function TrackList({
                 </button>
               ) : null}
             </div>
-          </div>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={() => player.playTrack(track, queue)}>
+                <Play />
+                播放
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => toggleFavorite(track.id)}>
+                <Heart />
+                {isFavorite ? "取消收藏" : "收藏"}
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => player.addToQueue(track)}>
+                <ListPlus />
+                添加到播放列表
+              </ContextMenuItem>
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>前往艺术家</ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  {artistNamesOf(track).map((artist) => (
+                    <ContextMenuItem
+                      key={artist}
+                      onClick={() => openArtist(artist)}
+                    >
+                      {artist}
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuItem onClick={() => openAlbum(albumKeyOf(track))}>
+                前往专辑
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                variant="destructive"
+                onClick={() => void removeTracks([track.id])}
+              >
+                <Trash />
+                从库中移除
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         );
       })}
     </div>

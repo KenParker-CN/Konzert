@@ -30,9 +30,9 @@ export function isM4aFamily(fileName: string): boolean {
 
 /** 该曲目是否需要软件解码（浏览器内核无法直接播放）。 */
 export function needsSoftwareDecode(
-  track: Pick<Track, "codec" | "lossless" | "fileName">,
+  track: Pick<Track, "lossless" | "fileName"> & { codec?: string | null },
 ): boolean {
-  if (track.codec.toLowerCase().includes("alac")) return true;
+  if (track.codec?.toLowerCase().includes("alac")) return true;
   // MP4/M4A 容器里的无损编码实际只有 ALAC；个别文件的 codec 字段缺失或写成
   // 别名（如「Apple Lossless」全称），用「无损 + M4A 容器」兜底识别。
   return track.lossless && isM4aFamily(track.fileName);

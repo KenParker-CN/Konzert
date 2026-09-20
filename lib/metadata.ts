@@ -92,7 +92,8 @@ export async function parseAudioFile(
             ? format.duration
             : 0;
     const picture = common.picture?.[0];
-    const copyright = cleanText(common.copyright) ?? null;
+    const copyrightText = cleanText(common.copyright);
+    const copyright = copyrightText || null;
 
     return {
         title,
@@ -229,4 +230,3 @@ function parseDateString(value: string): { year: number; month: number; day: num
 
     return null;
 }
-

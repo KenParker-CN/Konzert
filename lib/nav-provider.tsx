@@ -15,6 +15,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { CatalogReference } from "./catalog";
 
 export type ViewName = "library" | "favorites" | "history" | "settings";
 
@@ -22,8 +23,14 @@ interface NavContextValue {
   view: ViewName;
   /** 非空时展示专辑详情。 */
   albumKey: string | null;
+  /** 需要在艺术家视图中展开的艺术家。 */
+  artistName: string | null;
+  work: CatalogReference & { composer: string } | null;
   setView: (view: ViewName) => void;
   openAlbum: (albumKey: string) => void;
+  openArtist: (artistName: string) => void;
+  openWork: (work: CatalogReference & { composer: string }) => void;
+  closeWork: () => void;
   closeAlbum: () => void;
 }
 
@@ -32,18 +39,52 @@ const NavContext = createContext<NavContextValue | null>(null);
 export function NavProvider({ children }: { children: ReactNode }) {
   const [view, setViewState] = useState<ViewName>("library");
   const [albumKey, setAlbumKey] = useState<string | null>(null);
+  const [artistName, setArtistName] = useState<string | null>(null);
+  const [work, setWork] = useState<(CatalogReference & { composer: string }) | null>(
+    null,
+  );
 
   const setView = useCallback((next: ViewName) => {
     setViewState(next);
     setAlbumKey(null);
+    setArtistName(null);
+    setWork(null);
   }, []);
 
-  const openAlbum = useCallback((next: string) => setAlbumKey(next), []);
+  const openAlbum = useCallback((next: string) => {
+    setAlbumKey(next);
+    setArtistName(null);
+    setWork(null);
+  }, []);
+  const openArtist = useCallback((next: string) => {
+    setViewState("library");
+    setAlbumKey(null);
+    setArtistName(next);
+    setWork(null);
+  }, []);
+  const openWork = useCallback((next: CatalogReference & { composer: string }) => {
+    setViewState("library");
+    setAlbumKey(null);
+    setArtistName(null);
+    setWork(next);
+  }, []);
   const closeAlbum = useCallback(() => setAlbumKey(null), []);
+  const closeWork = useCallback(() => setWork(null), []);
 
   const value = useMemo(
-    () => ({ view, albumKey, setView, openAlbum, closeAlbum }),
-    [view, albumKey, setView, openAlbum, closeAlbum],
+    () => ({
+      view,
+      albumKey,
+      artistName,
+      work,
+      setView,
+      openAlbum,
+      openArtist,
+      openWork,
+      closeAlbum,
+      closeWork,
+    }),
+    [view, albumKey, artistName, work, setView, openAlbum, openArtist, openWork, closeAlbum, closeWork],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

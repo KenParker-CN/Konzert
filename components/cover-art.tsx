@@ -73,7 +73,7 @@ export function CoverArt({
   return (
     <div
       aria-hidden
-      className={`${className} flex items-center justify-center border border-zinc-200/70 bg-gradient-to-br from-blue-500/15 via-blue-500/5 to-transparent font-semibold text-zinc-400/80 select-none`}
+      className={`${className} flex items-center justify-center border border-zinc-200/70 bg-linear-to-br from-blue-500/15 via-blue-500/5 to-transparent font-semibold text-zinc-400/80 select-none`}
     >
       <span className={labelClassName}>{initialsOf(label)}</span>
     </div>

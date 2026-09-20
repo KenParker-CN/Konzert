@@ -51,6 +51,15 @@ import {
 /** 历史记录上限，避免无限增长。 */
 const HISTORY_LIMIT = 300;
 
+function dedupeHistory(entries: PlayHistoryEntry[]): PlayHistoryEntry[] {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.trackId)) return false;
+    seen.add(entry.trackId);
+    return true;
+  });
+}
+
 export interface ScanSummary {
   added: number;
   updated: number;
@@ -246,7 +255,14 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setTracks(storedTracks);
         setFavorites(new Set(storedFavorites));
-        setHistory(storedHistory);
+        const normalizedHistory = dedupeHistory(storedHistory).slice(
+          0,
+          HISTORY_LIMIT,
+        );
+        setHistory(normalizedHistory);
+        if (normalizedHistory.length !== storedHistory.length) {
+          void saveKv(KV_HISTORY, normalizedHistory);
+        }
         setSettings(normalizeSettings(storedSettings));
       } catch (caught) {
         if (!cancelled) {
@@ -285,9 +301,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const recordPlay = useCallback((trackId: string) => {
     const at = Date.now();
     setHistory((current) => {
-      const deduped = current.filter(
-        (entry, index) => index > 0 || entry.trackId !== trackId,
-      );
+      const deduped = current.filter((entry) => entry.trackId !== trackId);
       const next = [{ trackId, at }, ...deduped].slice(0, HISTORY_LIMIT);
       void saveKv(KV_HISTORY, next);
       return next;

@@ -1,8 +1,19 @@
 "use client";
 
-import { Play } from "lucide-react";
+import { Heart, ListPlus, Play, Trash } from "lucide-react";
 import { CoverArt } from "@/components/cover-art";
-import { formatReleaseDate, formatTotalDuration } from "@/lib/format";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { artistNamesOf } from "@/lib/catalog";
+import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
 import { usePlayer } from "@/lib/player-provider";
 import type { AlbumSummary } from "@/lib/types";
@@ -16,8 +27,9 @@ export function AlbumGrid({
   albums,
   emptyMessage = "还没有专辑，先导入音乐文件夹吧",
 }: AlbumGridProps) {
-  const { openAlbum } = useNav();
+  const { openAlbum, openArtist } = useNav();
   const player = usePlayer();
+  const { favorites, toggleFavorite, removeTracks } = useLibrary();
 
   if (albums.length === 0) {
     return (
@@ -30,7 +42,9 @@ export function AlbumGrid({
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
       {albums.map((album) => (
-        <div key={album.key} className="group flex flex-col gap-2.5">
+        <ContextMenu key={album.key}>
+          <ContextMenuTrigger>
+            <div className="group flex flex-col gap-2.5">
           <div className="relative">
             <button
               type="button"
@@ -66,7 +80,65 @@ export function AlbumGrid({
               {album.albumArtist}
             </p>
           </button>
-        </div>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => player.playQueue(album.tracks, 0)}>
+              <Play />
+              播放
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => {
+                const shouldFavorite = album.tracks.some(
+                  (track) => !favorites.has(track.id),
+                );
+                for (const track of album.tracks) {
+                  if (favorites.has(track.id) !== shouldFavorite) {
+                    toggleFavorite(track.id);
+                  }
+                }
+              }}
+            >
+              <Heart />
+              {album.tracks.every((track) => favorites.has(track.id))
+                ? "取消收藏"
+                : "收藏"}
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => {
+                for (const track of album.tracks) player.addToQueue(track);
+              }}
+            >
+              <ListPlus />
+              添加到播放列表
+            </ContextMenuItem>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>前往艺术家</ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                {[...new Set(album.tracks.flatMap(artistNamesOf))].map(
+                  (artist) => (
+                    <ContextMenuItem
+                      key={artist}
+                      onClick={() => openArtist(artist)}
+                    >
+                      {artist}
+                    </ContextMenuItem>
+                  ),
+                )}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onClick={() =>
+                void removeTracks(album.tracks.map((track) => track.id))
+              }
+            >
+              <Trash />
+              从库中移除
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       ))}
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
 
-import {useMemo, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Play, Search, Shuffle, X,} from "lucide-react";
 import {AlbumDetail} from "@/components/album-detail";
+import {WorkDetail} from "@/components/work-detail";
 import {AlbumGrid} from "@/components/album-grid";
 import {EmptyState} from "@/components/empty-state";
 import {TrackList} from "@/components/track-list";
@@ -46,7 +47,7 @@ const SONGS_PAGE_SIZE = 20;
 export function LibraryView() {
     const {tracks, albums, importFolder, scanning, storageMode, removeTracks} =
         useLibrary();
-    const {albumKey} = useNav();
+    const {albumKey, artistName, work} = useNav();
     const player = usePlayer();
 
     const [tab, setTab] = useState<Tab>("albums");
@@ -63,7 +64,16 @@ export function LibraryView() {
     const [artistSortDir, setArtistSortDir] = useState<SortDir>(
         ARTIST_SORT_DEFAULT_DIR.name,
     );
-    const [openArtist, setOpenArtist] = useState<string | null>(null);
+    const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!artistName) return;
+        const frame = requestAnimationFrame(() => {
+            setTab("artists");
+            setExpandedArtist(artistName);
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [artistName]);
 
     const matched = useMemo(() => searchTracks(tracks, query), [tracks, query]);
     const visibleTracks = useMemo(
@@ -99,6 +109,9 @@ export function LibraryView() {
 
     if (openAlbum) {
         return <AlbumDetail album={openAlbum}/>;
+    }
+    if (work) {
+        return <WorkDetail work={work}/>;
     }
 
     if (tracks.length === 0) {
@@ -272,9 +285,11 @@ export function LibraryView() {
             {tab === "artists" ? (
                 <ArtistSections
                     artists={artistGroups}
-                    openArtist={openArtist}
+                    openArtist={expandedArtist}
                     onToggleArtist={(artist) =>
-                        setOpenArtist((current) => (current === artist ? null : artist))
+                        setExpandedArtist((current) =>
+                            current === artist ? null : artist,
+                        )
                     }
                     onRemove={(track) => void removeTracks([track.id])}
                 />

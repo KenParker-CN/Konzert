@@ -30,6 +30,10 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
   const track = player.current;
   const isFavorite = track ? favorites.has(track.id) : false;
   const progressMax = player.duration > 0 ? player.duration : 1;
+  const progressPercent =
+    player.duration > 0
+      ? Math.min(100, Math.max(0, (player.currentTime / player.duration) * 100))
+      : 0;
 
   return (
     <div className="border-t border-zinc-200 bg-white/70 px-4 py-3 backdrop-blur-xl">
@@ -159,13 +163,14 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
             </span>
             <input
               type="range"
-              className="konzert-range h-4 w-full"
+              className="konzert-range konzert-progress-range h-4 w-full"
               min={0}
               max={progressMax}
               step={0.5}
               value={Math.min(player.currentTime, progressMax)}
               disabled={!track}
               aria-label="播放进度"
+              style={{ "--range-progress": `${progressPercent}%` } as React.CSSProperties}
               onChange={(event) => player.seek(Number(event.target.value))}
             />
             <span className="w-10 shrink-0 text-[11px] tabular-nums text-zinc-400">

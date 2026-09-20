@@ -3,9 +3,16 @@
 import {useMemo} from "react";
 import {ArrowLeft, Play, Shuffle} from "lucide-react";
 import {CoverArt} from "@/components/cover-art";
+import {CatalogTitle} from "@/components/catalog-title";
 import {TrackList} from "@/components/track-list";
 import {formatBitDepth, formatDuration, formatReleaseDate, formatSampleRate, formatTotalDuration,} from "@/lib/format";
-import {artistNamesOf, groupWorks, movementTitleOf, splitArtists} from "@/lib/catalog";
+import {
+    artistNamesOf,
+    groupTracksByDisc,
+    groupWorks,
+    movementTitleOf,
+    splitArtists,
+} from "@/lib/catalog";
 import {useLibrary} from "@/lib/library-provider";
 import {useNav} from "@/lib/nav-provider";
 import {usePlayer} from "@/lib/player-provider";
@@ -17,7 +24,8 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
     const {removeTracks} = useLibrary();
 
     // 古典作品分组：标题冒号前内容相同的乐章归到同一作品名下。
-    const sections = useMemo(() => groupWorks(album.tracks), [album.tracks]);
+    const discs = useMemo(() => groupTracksByDisc(album.tracks), [album.tracks]);
+    const showDiscHeadings = discs.length > 1;
     const albumArtists = new Set(
         splitArtists(album.albumArtist).map((artist) => artist.toLowerCase()),
     );
@@ -31,19 +39,19 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
         return isAlbumArtist ? null : artists.join("/");
     };
 
-    const audioTrack =
-        album.tracks.find((track) => track.bitDepth != null) ??
-        album.tracks.find((track) => track.sampleRate != null) ??
-        album.tracks[0] ??
-        null;
+    const bitDepthTrack = album.tracks.find((track) => track.bitDepth != null);
+    const sampleRateTrack = album.tracks.find(
+        (track) => track.sampleRate != null,
+    );
     const releaseDate = formatReleaseDate(album.releaseDate);
     const audioDetails = [
-        audioTrack?.bitDepth ? formatBitDepth(audioTrack.bitDepth) : null,
-        audioTrack?.sampleRate ? formatSampleRate(audioTrack.sampleRate) : null,
+        bitDepthTrack?.bitDepth != null
+            ? formatBitDepth(bitDepthTrack.bitDepth)
+            : null,
+        sampleRateTrack?.sampleRate != null
+            ? formatSampleRate(sampleRateTrack.sampleRate)
+            : null,
     ].filter((value): value is string => Boolean(value));
-    const coverDetails = [releaseDate, audioDetails.join(" / ")].filter(
-        (value): value is string => Boolean(value),
-    ).join(" · ");
 
     return (
         <div className="flex flex-col gap-6">
@@ -56,34 +64,26 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                 返回专辑列表
             </button>
 
-            <header className="flex flex-col gap-5 sm:flex-row sm:items-end">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="grid items-stretch gap-6 lg:h-[calc(100dvh-11rem)] lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,1.6fr)]">
+                <div className="flex h-full min-w-0 flex-col gap-4">
                     <CoverArt
                         coverId={album.coverId}
                         label={album.album}
-                        className="h-40 w-40 shrink-0 rounded-2xl shadow-2xl shadow-zinc-900/20"
+                        className="aspect-square w-full max-w-sm rounded-2xl shadow-2xl shadow-zinc-900/20"
                         labelClassName="text-5xl"
                     />
-                    {coverDetails ? (
-                        <p
-                            className="pb-1 text-xs text-zinc-500 sm:mb-1"
-                            title={coverDetails}
-                        >
-                            {coverDetails}
+                    <div className="min-w-0">
+                        <p className="text-[11px] tracking-widest text-zinc-500 uppercase">
+                            专辑
                         </p>
-                    ) : null}
-                </div>
-                <div className="min-w-0 flex-1">
-                    <p className="text-[11px] tracking-widest text-zinc-500 uppercase">
-                        专辑
-                    </p>
-                    <h1 className="mt-1 truncate text-2xl font-semibold text-zinc-900 sm:text-3xl">
-                        {album.album}
-                    </h1>
-                    <p className="mt-1.5 truncate text-sm text-zinc-600">
-                        {album.albumArtist}
-                    </p>
-                    <div className="mt-4 flex items-center gap-2">
+                        <h1 className="mt-1 truncate text-2xl font-semibold text-zinc-900 sm:text-3xl">
+                            {album.album}
+                        </h1>
+                        <p className="mt-1.5 truncate text-sm text-zinc-600">
+                            {album.albumArtist}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => player.playQueue(album.tracks, 0)}
@@ -101,70 +101,91 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                             随机播放
                         </button>
                     </div>
+                    <div className="flex flex-col gap-1 text-xs text-zinc-500">
+                        {audioDetails.length > 0 ? (
+                            <p>{audioDetails.join(" / ")}</p>
+                        ) : null}
+                        {releaseDate ? <p>{releaseDate}</p> : null}
+                        <p>
+                            {album.tracks.length} 首曲目 ·{" "}
+                            {formatTotalDuration(album.duration)}
+                        </p>
+                    </div>
+                    {album.copyright ? (
+                        <p className="text-xs leading-relaxed text-zinc-500">
+                            {album.copyright}
+                        </p>
+                    ) : null}
                 </div>
-            </header>
 
-            <div className="flex flex-col gap-3">
-                {sections.map((section) =>
-                        section.work ? (
-                            <section
-                                key={section.key}
-                                className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
-                            >
-                                <header
-                                    className="flex items-baseline justify-between gap-3 border-b border-zinc-200 bg-zinc-950/3 px-4 py-2.5">
-                                    <h2
-                                        className="truncate text-sm font-medium text-zinc-800"
-                                        title={
-                                            section.composer
-                                                ? `${section.work} · ${section.composer}`
-                                                : (section.work ?? "")
-                                        }
-                                    >
-                                        {section.work}
-                                        {section.composer ? (
-                                            <span className="font-normal text-zinc-500">
-                      {" "}
-                                                · {section.composer}
-                    </span>
-                                        ) : null}
+                <div className="h-full min-h-0 min-w-0 overflow-y-auto rounded-2xl border border-zinc-200 bg-white/70 p-3">
+                    <div className="flex flex-col gap-3">
+                        {discs.map((disc) => (
+                            <section key={disc.discNo} className="flex flex-col gap-2">
+                                {showDiscHeadings ? (
+                                    <h2 className="px-1 text-sm font-medium text-zinc-800">
+                                        CD {disc.discNo}
                                     </h2>
-                                    <span className="shrink-0 text-xs tabular-nums text-zinc-500">
+                                ) : null}
+                                {groupWorks(disc.tracks).map((section) =>
+                                    section.work ? (
+                                        <section
+                                            key={`${disc.discNo}-${section.key}`}
+                                            className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
+                                        >
+                                            <header className="flex items-baseline justify-between gap-3 border-b border-zinc-200 bg-zinc-950/3 px-4 py-2.5">
+                                                <h2
+                                                    className="truncate text-sm font-medium text-zinc-800"
+                                                    title={
+                                                        section.composer
+                                                            ? `${section.work} · ${section.composer}`
+                                                            : (section.work ?? "")
+                                                    }
+                                                >
+                                                    <CatalogTitle
+                                                        title={section.work}
+                                                        composer={section.tracks[0]?.composer ?? ""}
+                                                    />
+                                                    {section.composer ? (
+                                                        <span className="font-normal text-zinc-500">
+                      {" "}
+                                                            · {section.composer}
+                                                        </span>
+                                                    ) : null}
+                                                </h2>
+                                                <span className="shrink-0 text-xs tabular-nums text-zinc-500">
                   {section.tracks.length} 乐章 · {formatDuration(section.duration)}
                 </span>
-                                </header>
-                                <div className="p-1.5">
-                                    <TrackList
-                                        tracks={section.tracks}
-                                        showIndex
-                                        queueTracks={album.tracks}
-                                        titleOf={titleOf}
-                                        trackArtist={trackArtist}
-                                        trackAlbum={() => null}
-                                        onRemove={(track) => void removeTracks([track.id])}
-                                    />
-                                </div>
+                                            </header>
+                                            <div className="p-1.5">
+                                                <TrackList
+                                                    tracks={section.tracks}
+                                                    showIndex
+                                                    queueTracks={album.tracks}
+                                                    titleOf={titleOf}
+                                                    trackArtist={trackArtist}
+                                                    trackAlbum={() => null}
+                                                    onRemove={(track) => void removeTracks([track.id])}
+                                                />
+                                            </div>
+                                        </section>
+                                    ) : (
+                                        <TrackList
+                                            key={`${disc.discNo}-${section.key}`}
+                                            tracks={section.tracks}
+                                            showIndex
+                                            queueTracks={album.tracks}
+                                            trackArtist={trackArtist}
+                                            trackAlbum={() => null}
+                                            onRemove={(track) => void removeTracks([track.id])}
+                                            emptyMessage="这张专辑没有可播放的曲目"
+                                        />
+                                    ),
+                                )}
                             </section>
-                        ) : (
-                            <TrackList
-                                key={section.key}
-                                tracks={section.tracks}
-                                showIndex
-                                queueTracks={album.tracks}
-                                titleOf={titleOf}
-                                trackArtist={trackArtist}
-                                trackAlbum={() => null}
-                                onRemove={(track) => void removeTracks([track.id])}
-                                emptyMessage="这张专辑没有可播放的曲目"
-                            />
-                        ),
-                )}
-            </div>
-            <p>{album.copyright}</p>
-            <div className="mt-4 flex justify-left text-xs text-zinc-500">
-                <span>{album.tracks.length} 首曲目</span>
-                <span className="mx-2 text-zinc-300">·</span>
-                <span>{formatTotalDuration(album.duration)}</span>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

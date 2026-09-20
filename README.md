@@ -26,12 +26,18 @@
 ## 目录结构
 
 ```
-app/          # Next.js App Router 页面与全局样式
-components/   # UI 组件（侧边栏、播放条、专辑网格、播放队列等）
-lib/          # 核心逻辑：曲库扫描、元数据解析、IndexedDB、播放器与导航 Provider
-src-tauri/    # Tauri 壳（Rust）与打包配置、图标资源
-types/        # 环境相关的类型声明
+app/                    # Next.js App Router 入口、页面与全局样式
+components/             # 业务 UI（播放器、曲库、专辑、作品详情等）
+components/ui/          # 可复用的 Base UI / shadcn 组件
+components/views/       # 侧边栏导航对应的页面视图
+lib/                    # 领域逻辑、Provider、数据访问、格式化与测试
+public/                 # 浏览器静态资源（当前无业务资源）
+src-tauri/              # Tauri 壳（Rust）、权限、打包配置与平台图标
 ```
+
+组件按产品领域放在 `components/`，基础 UI 放在 `components/ui/`，数据和业务逻辑放在
+`lib/`；构建产物（`.next/`、`out/`、`src-tauri/target/`）和本地日志不属于源码目录，
+由 `.gitignore` 排除。
 
 ## 开发
 
@@ -65,4 +71,3 @@ npm run typecheck   # TypeScript 类型检查
 - **无服务端**：Next.js 使用静态导出，不使用 Server Actions / Route Handlers 等服务端能力，`out/` 可被 Tauri asset 协议或任意静态服务器直接托管
 - **数据不出设备**：曲库、封面、播放记录全部保存在本机 IndexedDB；音频文件只记录"指向方式"（Tauri 绝对路径 / File System Access 句柄 / 会话内存），不复制音频内容
 - **播放偏好还原**：音量、随机、循环模式与上次播放的曲目会持久化，下次启动时恢复
-
