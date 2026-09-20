@@ -4,6 +4,16 @@
 
 基于 Next.js（静态导出）+ Tauri 构建，同一套前端代码可以运行在 Tauri 桌面端 / 移动端，也可以直接部署为纯浏览器应用。
 
+## 预览
+
+### 音乐库
+
+<img src="public/preview/library.png" alt="Konzert 音乐库" width="800" />
+
+### 专辑详情
+
+<img src="public/preview/albumDetails.png" alt="Konzert 专辑详情" width="800" />
+
 ## 功能特性
 
 - **曲库扫描** — 选择音乐文件夹后自动遍历、解析音频标签并写入本机 IndexedDB，支持中途取消
