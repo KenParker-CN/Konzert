@@ -2,17 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  CircleAlert,
-  Disc3,
-  FolderPlus,
-  HardDrive,
-  Info,
-  RefreshCw,
-  Repeat,
-  Repeat1,
-  Shuffle,
-  Trash,
-} from "lucide-react";
+  IconAlertCircle,
+  IconDisc,
+  IconFolderPlus,
+  IconDeviceDesktop,
+  IconInfoCircle,
+  IconRefresh,
+  IconRepeat,
+  IconRepeatOnce,
+  IconArrowsShuffle,
+  IconTrash,
+  IconMoon,
+  IconSun,
+} from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { isTauriRuntime } from "@/lib/sources";
 import { estimateUsage } from "@/lib/db";
 import { formatFileSize, formatTotalDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
@@ -34,6 +38,12 @@ const STORAGE_DESCRIPTIONS: Record<string, string> = {
 };
 
 export function SettingsView() {
+  const { theme, setTheme } = useTheme();
+  const [accent, setAccent] = useState(() =>
+    typeof window === "undefined"
+      ? "blue"
+      : window.localStorage.getItem("konzert-accent") ?? "blue",
+  );
   const {
     tracks,
     albums,
@@ -41,6 +51,7 @@ export function SettingsView() {
     storageMode,
     updateSettings,
     importFolder,
+    refreshLibrary,
     clearLibrary,
     scanning,
     lastScan,
@@ -50,6 +61,15 @@ export function SettingsView() {
     null,
   );
   const [confirmClear, setConfirmClear] = useState(false);
+
+  const updateAccent = (value: string) => {
+    setAccent(value);
+  };
+
+  useEffect(() => {
+    window.localStorage.setItem("konzert-accent", accent);
+    document.documentElement.dataset.accent = accent;
+  }, [accent]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +107,7 @@ export function SettingsView() {
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <HardDrive className="h-4 w-4 text-blue-600" />
+          <IconDeviceDesktop className="h-4 w-4 text-app-accent" />
           存储与曲库
         </h2>
         <dl className="mt-4 grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
@@ -116,8 +136,17 @@ export function SettingsView() {
             disabled={scanning}
             className="flex items-center gap-2 rounded-full bg-zinc-950/5 px-4 py-2 text-xs text-zinc-800 transition hover:bg-zinc-950/10 disabled:opacity-60"
           >
-            <FolderPlus className="h-3.5 w-3.5" />
+            <IconFolderPlus className="h-3.5 w-3.5" />
             扫描新文件夹
+          </button>
+          <button
+            type="button"
+            onClick={() => void refreshLibrary()}
+            disabled={scanning || settings.watchedFolders.length === 0}
+            className="flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-xs text-zinc-700 transition hover:bg-zinc-950/5 disabled:opacity-40"
+          >
+            <IconRefresh className="h-3.5 w-3.5" />
+            刷新音乐库
           </button>
           {confirmClear ? (
             <>
@@ -129,7 +158,7 @@ export function SettingsView() {
                 }}
                 className="flex items-center gap-2 rounded-full bg-rose-500/90 px-4 py-2 text-xs font-medium text-white transition hover:bg-rose-500"
               >
-                <Trash className="h-3.5 w-3.5" />
+                <IconTrash className="h-3.5 w-3.5" />
                 确认清空曲库
               </button>
               <button
@@ -147,21 +176,71 @@ export function SettingsView() {
               disabled={tracks.length === 0}
               className="flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-xs text-zinc-500 transition hover:bg-zinc-950/5 disabled:opacity-40"
             >
-              <Trash className="h-3.5 w-3.5" />
+              <IconTrash className="h-3.5 w-3.5" />
               清空曲库
             </button>
           )}
         </div>
         <p className="mt-3 flex items-start gap-1.5 text-[11px] text-zinc-500">
-          <CircleAlert className="mt-px h-3 w-3 shrink-0" />
+          <IconAlertCircle className="mt-px h-3 w-3 shrink-0" />
           清空只会删除本机的曲库索引与封面缓存，不会动你的音乐文件。
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+        <h2 className="text-sm font-medium text-zinc-800">外观</h2>
+        <div className="mt-4 flex flex-col gap-4 text-xs">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500">主题模式</span>
+            <div className="flex gap-1 rounded-full bg-zinc-950/5 p-1">
+              {[
+                ["light", "浅色", IconSun],
+                ["dark", "深色", IconMoon],
+              ].map(([value, label, Icon]) => (
+                <button
+                  key={value as string}
+                  type="button"
+                  onClick={() => setTheme(value as string)}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 ${
+                    theme === value ? "bg-zinc-900 text-white" : "text-zinc-500"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label as string}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500">强调色</span>
+            <div className="flex items-center gap-2">
+              {[
+                ["blue", "#1967d2"],
+                ["violet", "#7c3aed"],
+                ["emerald", "#059669"],
+                ["rose", "#e11d48"],
+              ].map(([name, color]) => (
+                <button
+                  key={name}
+                  type="button"
+                  aria-label={`选择${name}强调色`}
+                  aria-pressed={accent === name}
+                  onClick={() => updateAccent(name)}
+                  className={`size-5 rounded-full border-2 ${
+                    accent === name ? "border-zinc-900 ring-2 ring-zinc-300" : "border-white"
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* 播放偏好 */}
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <Disc3 className="h-4 w-4 text-blue-600" />
+          <IconDisc className="h-4 w-4 text-app-accent" />
           播放偏好
         </h2>
 
@@ -171,12 +250,13 @@ export function SettingsView() {
             <span className="flex items-center gap-3">
               <input
                 type="range"
-                className="konzert-range h-4 w-40"
+                className="konzert-range konzert-volume-range h-4 w-40"
                 min={0}
                 max={1}
                 step={0.01}
                 value={settings.volume}
                 aria-label="默认音量"
+                style={{ "--range-progress": `${settings.volume * 100}%` } as React.CSSProperties}
                 onChange={(event) =>
                   updateSettings({ volume: Number(event.target.value) })
                 }
@@ -195,11 +275,11 @@ export function SettingsView() {
               aria-pressed={settings.shuffle}
               className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 transition ${
                 settings.shuffle
-                  ? "bg-blue-500/15 text-blue-700"
+                  ? "bg-app-accent-soft text-app-accent"
                   : "bg-zinc-950/5 text-zinc-500 hover:text-zinc-700"
               }`}
             >
-              <Shuffle className="h-3.5 w-3.5" />
+              <IconArrowsShuffle className="h-3.5 w-3.5" />
               {settings.shuffle ? "已开启" : "已关闭"}
             </button>
           </div>
@@ -212,13 +292,13 @@ export function SettingsView() {
               className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 transition ${
                 settings.repeat === "off"
                   ? "bg-zinc-950/5 text-zinc-500 hover:text-zinc-700"
-                  : "bg-blue-500/15 text-blue-700"
+                  : "bg-app-accent-soft text-app-accent"
               }`}
             >
               {settings.repeat === "one" ? (
-                <Repeat1 className="h-3.5 w-3.5" />
+                <IconRepeatOnce className="h-3.5 w-3.5" />
               ) : (
-                <Repeat className="h-3.5 w-3.5" />
+                <IconRepeat className="h-3.5 w-3.5" />
               )}
               {settings.repeat === "one"
                 ? "单曲循环"
@@ -239,10 +319,57 @@ export function SettingsView() {
         </div>
       </section>
 
+      <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+        <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
+          <IconFolderPlus className="h-4 w-4 text-app-accent" />
+          应用偏好
+        </h2>
+        <div className="mt-4 flex flex-col gap-4 text-xs">
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500">界面语言</span>
+            <select
+              value={settings.language}
+              onChange={(event) =>
+                updateSettings({ language: event.target.value as "zh-CN" | "en-US" })
+              }
+              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-zinc-700"
+            >
+              <option value="zh-CN">简体中文</option>
+              <option value="en-US">English</option>
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500">自动监控已导入文件夹</span>
+            <input
+              type="checkbox"
+              checked={settings.autoWatch}
+              onChange={(event) => updateSettings({ autoWatch: event.target.checked })}
+              className="size-4 accent-blue-600"
+            />
+          </label>
+          <div>
+            <p className="text-zinc-500">固定监控文件夹</p>
+            {settings.watchedFolders.length > 0 ? (
+              <ul className="mt-2 flex flex-col gap-1 text-[11px] text-zinc-500">
+                {settings.watchedFolders.map((folder) => (
+                  <li key={folder} className="truncate" title={folder}>
+                    {folder}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-[11px] text-zinc-400">
+                在桌面端扫描文件夹后会自动加入监控列表。
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* 最近一次扫描 */}
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <Info className="h-4 w-4 text-blue-600" />
+          <IconInfoCircle className="h-4 w-4 text-app-accent" />
           最近一次扫描
         </h2>
         {lastScan ? (
@@ -258,7 +385,7 @@ export function SettingsView() {
           </p>
         )}
         <p className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-500">
-          <RefreshCw className="h-3 w-3" />
+          <IconRefresh className="h-3 w-3" />
           再次扫描同一文件夹时会按文件大小识别变化，已听次数与收藏不会丢失。
         </p>
       </section>
@@ -266,7 +393,7 @@ export function SettingsView() {
       {/* 关于 */}
       <section className="rounded-2xl border border-zinc-200 bg-white p-5">
         <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-          <Info className="h-4 w-4 text-blue-600" />
+          <IconInfoCircle className="h-4 w-4 text-app-accent" />
           关于 Konzert
         </h2>
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">
@@ -279,6 +406,29 @@ export function SettingsView() {
           版本 0.1.0 · 支持格式：MP3 / M4A（AAC / ALAC）/ FLAC / OGG / OPUS / WAV /
           WMA / AIFF 等
         </p>
+        <a
+          href="https://github.com/KenParker-CN/Konzert"
+          target="_blank"
+          rel="noreferrer"
+          onClick={(event) => {
+            if (!isTauriRuntime()) return;
+            event.preventDefault();
+            void import("@tauri-apps/plugin-opener").then(({ openUrl }) =>
+              openUrl("https://github.com/KenParker-CN/Konzert"),
+            );
+          }}
+          className="mt-3 inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-blue-600"
+        >
+          <svg
+            className="h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.69c-2.78.6-3.37-1.18-3.37-1.18-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 12 7.85c.85 0 1.71.12 2.51.37 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
+          </svg>
+          GitHub 仓库
+        </a>
       </section>
     </div>
   );

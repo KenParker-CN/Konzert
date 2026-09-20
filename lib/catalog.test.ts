@@ -56,6 +56,22 @@ test("uses the first colon for ordinary work titles", () => {
   assert.equal(workTitleOf("Sonata in G major: Largo"), "Sonata in G major");
 });
 
+test("recognizes the ratio colon after a K catalogue number", () => {
+  const title =
+    "Requiem, K. 626 (Compl. & Ed. Ostrzyga)∶ I. Introitus. Requiem aeternam";
+  assert.equal(workTitleOf(title), "Requiem, K. 626 (Compl. & Ed. Ostrzyga)");
+  assert.equal(
+    workKeyOf(title),
+    "requiem, k. 626 (compl. & ed. ostrzyga)",
+  );
+  assert.deepEqual(catalogReferenceOf(title), {
+    system: "K",
+    number: "626",
+    display: "K. 626",
+    index: 9,
+  });
+});
+
 test("does not group titles without a valid leading work prefix", () => {
   assert.equal(workKeyOf("No colon title"), null);
   assert.equal(workTitleOf("No colon title"), "No colon title");

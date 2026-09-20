@@ -1,19 +1,20 @@
 "use client";
 
 import {
-  Heart,
-  ListMusic,
-  Pause,
-  Play,
-  Repeat,
-  Repeat1,
-  Shuffle,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+  IconHeart,
+  IconPlaylist,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconRepeat,
+  IconRepeatOnce,
+  IconArrowsShuffle,
+  IconPlayerSkipBack,
+  IconPlayerSkipForward,
+  IconVolume,
+  IconVolumeOff,
+} from "@tabler/icons-react";
 import { CoverArt } from "@/components/cover-art";
+import { MarqueeText } from "@/components/marquee-text";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
 import { usePlayer } from "@/lib/player-provider";
@@ -49,9 +50,13 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
                 labelClassName="text-sm"
               />
               <div className="min-w-0">
-                <p className="truncate text-sm text-zinc-800" title={track.title}>
+                <MarqueeText
+                  as="p"
+                  className="text-sm text-zinc-800"
+                  title={track.title}
+                >
                   {track.title}
-                </p>
+                </MarqueeText>
                 <p
                   className="truncate text-xs text-zinc-500"
                   title={`${track.artist} · ${track.album}`}
@@ -69,7 +74,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
                     : "text-zinc-500 hover:text-zinc-700"
                 }`}
               >
-                <Heart
+                <IconHeart
                   className="h-4 w-4"
                   fill={isFavorite ? "currentColor" : "none"}
                 />
@@ -92,11 +97,11 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               onClick={player.toggleShuffle}
               className={`rounded-full p-2 transition ${
                 player.shuffle
-                  ? "text-blue-600"
+                  ? "text-app-accent"
                   : "text-zinc-500 hover:text-zinc-700"
               }`}
             >
-              <Shuffle className="h-4 w-4" />
+              <IconArrowsShuffle className="h-4 w-4" />
             </button>
 
             <button
@@ -106,7 +111,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               disabled={!track}
               className="rounded-full p-2 text-zinc-600 transition hover:text-zinc-900"
             >
-              <SkipBack className="h-5 w-5 fill-current" />
+              <IconPlayerSkipBack className="h-5 w-5 fill-current" />
             </button>
 
             <button
@@ -114,12 +119,12 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               aria-label={player.isPlaying ? "暂停" : "播放"}
               onClick={player.toggle}
               disabled={!track}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 shadow-lg shadow-zinc-900/15 transition hover:scale-105 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:scale-100"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-app-accent text-white shadow-lg shadow-zinc-900/15 transition hover:scale-105 hover:brightness-90 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:scale-100"
             >
               {player.isPlaying ? (
-                <Pause className="h-5 w-5 fill-current" />
+                <IconPlayerPause className="h-5 w-5 fill-current" />
               ) : (
-                <Play className="ml-0.5 h-5 w-5 fill-current" />
+                <IconPlayerPlay className="ml-0.5 h-5 w-5 fill-current" />
               )}
             </button>
 
@@ -130,7 +135,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               disabled={!track}
               className="rounded-full p-2 text-zinc-600 transition hover:text-zinc-900"
             >
-              <SkipForward className="h-5 w-5 fill-current" />
+              <IconPlayerSkipForward className="h-5 w-5 fill-current" />
             </button>
 
             <button
@@ -146,13 +151,13 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               className={`rounded-full p-2 transition ${
                 player.repeat === "off"
                   ? "text-zinc-500 hover:text-zinc-700"
-                  : "text-blue-600"
+                  : "text-app-accent"
               }`}
             >
               {player.repeat === "one" ? (
-                <Repeat1 className="h-4 w-4" />
+                <IconRepeatOnce className="h-4 w-4" />
               ) : (
-                <Repeat className="h-4 w-4" />
+                <IconRepeat className="h-4 w-4" />
               )}
             </button>
           </div>
@@ -192,7 +197,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
                 : "text-zinc-500 hover:text-zinc-700"
             }`}
           >
-            <ListMusic className="h-4 w-4" />
+            <IconPlaylist className="h-4 w-4" />
           </button>
 
           <button
@@ -202,19 +207,22 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
             className="rounded-full p-2 text-zinc-500 transition hover:text-zinc-700"
           >
             {player.muted || player.volume === 0 ? (
-              <VolumeX className="h-4 w-4" />
+              <IconVolumeOff className="h-4 w-4" />
             ) : (
-              <Volume2 className="h-4 w-4" />
+              <IconVolume className="h-4 w-4" />
             )}
           </button>
           <input
             type="range"
-            className="konzert-range h-4 w-24"
+            className="konzert-range konzert-volume-range h-4 w-24"
             min={0}
             max={1}
             step={0.01}
             value={player.muted ? 0 : player.volume}
             aria-label="音量"
+            style={{
+              "--range-progress": `${(player.muted ? 0 : player.volume) * 100}%`,
+            } as React.CSSProperties}
             onChange={(event) => player.setVolume(Number(event.target.value))}
           />
         </div>

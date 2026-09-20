@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, ListPlus, Play, Trash } from "lucide-react";
+import { IconHeart, IconPlaylistAdd, IconPlayerPlay, IconTrash } from "@tabler/icons-react";
 import { CoverArt } from "@/components/cover-art";
 import {
   ContextMenu,
@@ -40,7 +40,7 @@ export function AlbumGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {albums.map((album) => (
         <ContextMenu key={album.key}>
           <ContextMenuTrigger>
@@ -63,9 +63,9 @@ export function AlbumGrid({
               type="button"
               aria-label={`播放专辑 ${album.album}`}
               onClick={() => player.playQueue(album.tracks, 0)}
-              className="absolute right-2.5 bottom-2.5 flex h-10 w-10 translate-y-1.5 items-center justify-center rounded-full bg-blue-500 text-white opacity-0 shadow-xl shadow-zinc-900/20 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-blue-600"
+              className="absolute right-2.5 bottom-2.5 flex h-10 w-10 translate-y-1.5 items-center justify-center rounded-full bg-app-accent text-white opacity-0 shadow-xl shadow-zinc-900/20 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100"
             >
-              <Play className="ml-0.5 h-4.5 w-4.5 fill-current" />
+              <IconPlayerPlay className="ml-0.5 h-4.5 w-4.5 fill-current" />
             </button>
           </div>
           <button
@@ -84,7 +84,7 @@ export function AlbumGrid({
           </ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem onClick={() => player.playQueue(album.tracks, 0)}>
-              <Play />
+              <IconPlayerPlay />
               播放
             </ContextMenuItem>
             <ContextMenuItem
@@ -99,7 +99,7 @@ export function AlbumGrid({
                 }
               }}
             >
-              <Heart />
+              <IconHeart />
               {album.tracks.every((track) => favorites.has(track.id))
                 ? "取消收藏"
                 : "收藏"}
@@ -109,7 +109,7 @@ export function AlbumGrid({
                 for (const track of album.tracks) player.addToQueue(track);
               }}
             >
-              <ListPlus />
+              <IconPlaylistAdd />
               添加到播放列表
             </ContextMenuItem>
             <ContextMenuSub>
@@ -134,7 +134,7 @@ export function AlbumGrid({
                 void removeTracks(album.tracks.map((track) => track.id))
               }
             >
-              <Trash />
+              <IconTrash />
               从库中移除
             </ContextMenuItem>
           </ContextMenuContent>

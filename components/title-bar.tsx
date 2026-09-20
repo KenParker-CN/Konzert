@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, type MouseEvent } from "react";
-import { Minus, Square, SquareStack, X } from "lucide-react";
+import { IconMinus, IconSquare, IconStack2, IconX } from "@tabler/icons-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { isTauriRuntime } from "@/lib/sources";
@@ -124,7 +124,7 @@ export function TitleBar() {
           aria-label="最小化"
           className="flex h-9 w-11 items-center justify-center text-zinc-600 transition hover:bg-zinc-200 hover:text-zinc-900"
         >
-          <Minus className="h-4 w-4" strokeWidth={1.5} />
+          <IconMinus className="h-4 w-4" strokeWidth={1.5} />
         </button>
         <button
           type="button"
@@ -133,9 +133,9 @@ export function TitleBar() {
           className="flex h-9 w-11 items-center justify-center text-zinc-600 transition hover:bg-zinc-200 hover:text-zinc-900"
         >
           {isMaximized ? (
-            <SquareStack className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <IconStack2 className="h-3.5 w-3.5" strokeWidth={1.5} />
           ) : (
-            <Square className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <IconSquare className="h-3.5 w-3.5" strokeWidth={1.5} />
           )}
         </button>
         <button
@@ -144,7 +144,7 @@ export function TitleBar() {
           aria-label="关闭"
           className="flex h-9 w-11 items-center justify-center text-zinc-600 transition hover:bg-rose-500 hover:text-white"
         >
-          <X className="h-4 w-4" strokeWidth={1.5} />
+          <IconX className="h-4 w-4" strokeWidth={1.5} />
         </button>
       </div>
     </div>

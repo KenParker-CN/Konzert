@@ -1,12 +1,14 @@
 "use client";
 
-import {useEffect, useMemo, useState} from "react";
-import {ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Play, Search, Shuffle, X,} from "lucide-react";
+import {useMemo, useState} from "react";
+import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlayerPlay, IconSearch, IconArrowsShuffle, IconX,} from "@tabler/icons-react";
 import {AlbumDetail} from "@/components/album-detail";
+import {ArtistDetail} from "@/components/artist-detail";
 import {WorkDetail} from "@/components/work-detail";
 import {AlbumGrid} from "@/components/album-grid";
 import {EmptyState} from "@/components/empty-state";
 import {TrackList} from "@/components/track-list";
+import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {
     ALBUM_SORT_DEFAULT_DIR,
     ALBUM_SORT_LABELS,
@@ -30,7 +32,6 @@ import {formatDuration} from "@/lib/format";
 import {useLibrary} from "@/lib/library-provider";
 import {useNav} from "@/lib/nav-provider";
 import {usePlayer} from "@/lib/player-provider";
-import type {Track} from "@/lib/types";
 
 type Tab = "albums" | "songs" | "artists";
 
@@ -56,25 +57,14 @@ export function LibraryView() {
 
     const [sort, setSort] = useState<TrackSort>("added");
     const [sortDir, setSortDir] = useState<SortDir>(TRACK_SORT_DEFAULT_DIR.added);
-    const [albumSort, setAlbumSort] = useState<AlbumSort>("artist");
+    const [albumSort, setAlbumSort] = useState<AlbumSort>("date");
     const [albumSortDir, setAlbumSortDir] = useState<SortDir>(
-        ALBUM_SORT_DEFAULT_DIR.artist,
+        ALBUM_SORT_DEFAULT_DIR.date,
     );
     const [artistSort, setArtistSort] = useState<ArtistSort>("name");
     const [artistSortDir, setArtistSortDir] = useState<SortDir>(
         ARTIST_SORT_DEFAULT_DIR.name,
     );
-    const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!artistName) return;
-        const frame = requestAnimationFrame(() => {
-            setTab("artists");
-            setExpandedArtist(artistName);
-        });
-        return () => cancelAnimationFrame(frame);
-    }, [artistName]);
-
     const matched = useMemo(() => searchTracks(tracks, query), [tracks, query]);
     const visibleTracks = useMemo(
         () => sortTracks(matched, sort, sortDir),
@@ -112,6 +102,9 @@ export function LibraryView() {
     }
     if (work) {
         return <WorkDetail work={work}/>;
+    }
+    if (artistName) {
+        return <ArtistDetail artistName={artistName}/>;
     }
 
     if (tracks.length === 0) {
@@ -152,7 +145,7 @@ export function LibraryView() {
 
                     <div className="flex items-center gap-2">
                         <div className="relative">
-                            <Search
+                            <IconSearch
                                 className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500"/>
                             <input
                                 value={query}
@@ -167,7 +160,7 @@ export function LibraryView() {
                                     onClick={() => updateQuery("")}
                                     className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-zinc-500 hover:text-zinc-700"
                                 >
-                                    <X className="h-3.5 w-3.5"/>
+                                    <IconX className="h-3.5 w-3.5"/>
                                 </button>
                             ) : null}
                         </div>
@@ -176,9 +169,9 @@ export function LibraryView() {
                             type="button"
                             onClick={() => player.playQueue(visibleTracks, 0)}
                             disabled={visibleTracks.length === 0}
-                            className="flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-xs font-medium text-zinc-50 transition hover:bg-zinc-700 disabled:opacity-40"
+                            className="flex items-center gap-1.5 rounded-full bg-app-accent px-3.5 py-1.5 text-xs font-medium text-white transition hover:brightness-90 disabled:opacity-40"
                         >
-                            <Play className="h-3.5 w-3.5 fill-current"/>
+                            <IconPlayerPlay className="h-3.5 w-3.5 fill-current"/>
                             播放全部
                         </button>
                         <button
@@ -187,7 +180,7 @@ export function LibraryView() {
                             disabled={visibleTracks.length === 0}
                             className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs text-zinc-700 transition hover:bg-zinc-950/5 disabled:opacity-40"
                         >
-                            <Shuffle className="h-3.5 w-3.5"/>
+                            <IconArrowsShuffle className="h-3.5 w-3.5"/>
                             随机
                         </button>
                     </div>
@@ -283,15 +276,8 @@ export function LibraryView() {
             ) : null}
 
             {tab === "artists" ? (
-                <ArtistSections
+                <ArtistGrid
                     artists={artistGroups}
-                    openArtist={expandedArtist}
-                    onToggleArtist={(artist) =>
-                        setExpandedArtist((current) =>
-                            current === artist ? null : artist,
-                        )
-                    }
-                    onRemove={(track) => void removeTracks([track.id])}
                 />
             ) : null}
         </div>
@@ -335,9 +321,9 @@ function SortControl<T extends string>({
           className="rounded-lg border bg-zinc-950/5 p-1 text-zinc-500 transition hover:text-zinc-800"
       >
         {dir === "asc" ? (
-            <ArrowUp className="h-3.5 w-3.5"/>
+            <IconArrowUp className="h-3.5 w-3.5"/>
         ) : (
-            <ArrowDown className="h-3.5 w-3.5"/>
+            <IconArrowDown className="h-3.5 w-3.5"/>
         )}
       </button>
     </span>
@@ -367,7 +353,7 @@ function SongsPagination({
                 disabled={page <= 1}
                 className="flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-1 transition hover:bg-zinc-950/5 disabled:opacity-40"
             >
-                <ChevronLeft className="h-3.5 w-3.5"/>
+                <IconChevronLeft className="h-3.5 w-3.5"/>
                 上一页
             </button>
             <span className="tabular-nums">
@@ -380,25 +366,19 @@ function SongsPagination({
                 className="flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-1 transition hover:bg-zinc-950/5 disabled:opacity-40"
             >
                 下一页
-                <ChevronRight className="h-3.5 w-3.5"/>
+                <IconChevronRight className="h-3.5 w-3.5"/>
             </button>
         </div>
     );
 }
 
-interface ArtistSectionsProps {
+interface ArtistGridProps {
     artists: ArtistSummary[];
-    openArtist: string | null;
-    onToggleArtist: (artist: string) => void;
-    onRemove: (track: Track) => void;
 }
 
-function ArtistSections({
-                            artists,
-                            openArtist,
-                            onToggleArtist,
-                            onRemove,
-                        }: ArtistSectionsProps) {
+function ArtistGrid({artists}: ArtistGridProps) {
+    const {openArtist} = useNav();
+
     if (artists.length === 0) {
         return (
             <p className="px-4 py-12 text-center text-sm text-zinc-500">
@@ -408,42 +388,30 @@ function ArtistSections({
     }
 
     return (
-        <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
             {artists.map((artist) => {
-                const open = openArtist === artist.name;
-
                 return (
-                    <div
+                    <button
                         key={artist.name}
-                        className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
+                        type="button"
+                        onClick={() => openArtist(artist.name)}
+                        className="group flex min-w-0 flex-col items-center gap-2 text-center"
                     >
-                        <button
-                            type="button"
-                            onClick={() => onToggleArtist(artist.name)}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-100"
+                        <Avatar
+                            size="lg"
+                            className="size-24 border border-zinc-200 bg-zinc-100 text-2xl text-zinc-500 shadow-lg shadow-zinc-900/15 transition duration-200 group-hover:scale-105 group-hover:bg-zinc-200 sm:size-28"
                         >
-                            <ChevronDown
-                                className={`h-4 w-4 shrink-0 text-zinc-500 transition ${
-                                    open ? "rotate-180" : ""
-                                }`}
-                            />
-                            <span className="flex-1 truncate text-sm text-zinc-800">
-                {artist.name}
-              </span>
-                            <span className="shrink-0 text-xs text-zinc-500">
-                {artist.tracks.length} 首 · {formatDuration(artist.duration)}
-              </span>
-                        </button>
-                        {open ? (
-                            <div className="border-t border-zinc-200 p-1.5">
-                                <TrackList
-                                    tracks={artist.tracks}
-                                    showIndex={false}
-                                    onRemove={onRemove}
-                                />
-                            </div>
-                        ) : null}
-                    </div>
+                            <AvatarFallback>
+                                {artist.name.trim().charAt(0).toUpperCase() || "?"}
+                            </AvatarFallback>
+                        </Avatar>
+                        <span className="w-full truncate text-sm text-zinc-800">
+                            {artist.name}
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                            {artist.tracks.length} 首 · {formatDuration(artist.duration)}
+                        </span>
+                    </button>
                 );
             })}
         </div>

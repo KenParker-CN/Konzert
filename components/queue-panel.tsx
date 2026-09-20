@@ -1,6 +1,6 @@
 "use client";
 
-import { ListMusic, Trash, X } from "lucide-react";
+import { IconPlaylist, IconTrash, IconX } from "@tabler/icons-react";
 import { CoverArt } from "@/components/cover-art";
 import { formatDuration } from "@/lib/format";
 import { usePlayer } from "@/lib/player-provider";
@@ -35,7 +35,7 @@ export function QueuePanel({ open, onClose }: QueuePanelProps) {
               disabled={player.queue.length === 0}
               className="rounded p-1.5 text-zinc-500 transition hover:text-rose-600 disabled:opacity-40"
             >
-              <Trash className="h-4 w-4" />
+              <IconTrash className="h-4 w-4" />
             </button>
             <button
               type="button"
@@ -43,7 +43,7 @@ export function QueuePanel({ open, onClose }: QueuePanelProps) {
               onClick={onClose}
               className="rounded p-1.5 text-zinc-500 transition hover:text-zinc-600"
             >
-              <X className="h-4 w-4" />
+              <IconX className="h-4 w-4" />
             </button>
           </div>
         </header>
@@ -51,7 +51,7 @@ export function QueuePanel({ open, onClose }: QueuePanelProps) {
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {player.queue.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-16 text-center text-xs text-zinc-500">
-              <ListMusic className="h-6 w-6 text-zinc-500" />
+              <IconPlaylist className="h-6 w-6 text-zinc-500" />
               队列是空的，从曲库选择曲目即可开始播放
             </div>
           ) : (
@@ -97,7 +97,7 @@ export function QueuePanel({ open, onClose }: QueuePanelProps) {
                     onClick={() => player.removeFromQueue(index)}
                     className="shrink-0 rounded p-1 text-zinc-500 opacity-0 transition hover:text-rose-600 group-hover:opacity-100"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <IconX className="h-3.5 w-3.5" />
                   </button>
                 </div>
               );

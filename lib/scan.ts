@@ -261,7 +261,7 @@ export interface ScanOutcome {
 
 export interface ScanOptions {
   onProgress?: (progress: ScanProgress) => void;
-  /** 并发解析数量，默认 4。 */
+  /** 并发解析数量，默认 3，避免大量音频同时读取导致界面卡顿。 */
   concurrency?: number;
   signal?: AbortSignal;
 }
@@ -281,11 +281,31 @@ async function parseCandidates(
   options: ScanOptions,
 ): Promise<{ parsed: ParsedEntry[]; failures: ScanFailure[] }> {
   const { onProgress, signal } = options;
-  const concurrency = Math.max(1, options.concurrency ?? 4);
+  const concurrency = Math.max(1, options.concurrency ?? 3);
   const parsed: ParsedEntry[] = [];
   const failures: ScanFailure[] = [];
   let cursor = 0;
   let processed = 0;
+  let lastProgressAt = 0;
+  let pendingProgress: ScanProgress | null = null;
+  let progressTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const reportProgress = (progress: ScanProgress, force = false) => {
+    pendingProgress = progress;
+    const now = Date.now();
+    if (!force && now - lastProgressAt < 120) {
+      if (!progressTimer) {
+        progressTimer = setTimeout(() => {
+          progressTimer = null;
+          if (pendingProgress) reportProgress(pendingProgress, true);
+        }, 120 - (now - lastProgressAt));
+      }
+      return;
+    }
+    lastProgressAt = now;
+    pendingProgress = null;
+    onProgress?.(progress);
+  };
 
   const worker = async (): Promise<void> => {
     for (;;) {
@@ -305,7 +325,7 @@ async function parseCandidates(
         });
       } finally {
         processed += 1;
-        onProgress?.({
+        reportProgress({
           phase: "parsing",
           processed,
           total: candidates.length,
@@ -320,6 +340,8 @@ async function parseCandidates(
       worker(),
     ),
   );
+  if (progressTimer) clearTimeout(progressTimer);
+  if (pendingProgress) reportProgress(pendingProgress, true);
 
   return { parsed, failures };
 }

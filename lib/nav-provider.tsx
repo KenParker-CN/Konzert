@@ -29,6 +29,7 @@ interface NavContextValue {
   setView: (view: ViewName) => void;
   openAlbum: (albumKey: string) => void;
   openArtist: (artistName: string) => void;
+  closeArtist: () => void;
   openWork: (work: CatalogReference & { composer: string }) => void;
   closeWork: () => void;
   closeAlbum: () => void;
@@ -62,6 +63,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
     setArtistName(next);
     setWork(null);
   }, []);
+  const closeArtist = useCallback(() => setArtistName(null), []);
   const openWork = useCallback((next: CatalogReference & { composer: string }) => {
     setViewState("library");
     setAlbumKey(null);
@@ -80,11 +82,12 @@ export function NavProvider({ children }: { children: ReactNode }) {
       setView,
       openAlbum,
       openArtist,
+      closeArtist,
       openWork,
       closeAlbum,
       closeWork,
     }),
-    [view, albumKey, artistName, work, setView, openAlbum, openArtist, openWork, closeAlbum, closeWork],
+    [view, albumKey, artistName, work, setView, openAlbum, openArtist, closeArtist, openWork, closeAlbum, closeWork],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

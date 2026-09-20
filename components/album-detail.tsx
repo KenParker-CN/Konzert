@@ -1,13 +1,15 @@
 "use client";
 
 import {useMemo} from "react";
-import {ArrowLeft, Play, Shuffle} from "lucide-react";
+import {IconArrowLeft, IconPlayerPlay, IconArrowsShuffle} from "@tabler/icons-react";
 import {CoverArt} from "@/components/cover-art";
+import {MarqueeText} from "@/components/marquee-text";
 import {CatalogTitle} from "@/components/catalog-title";
 import {TrackList} from "@/components/track-list";
 import {formatBitDepth, formatDuration, formatReleaseDate, formatSampleRate, formatTotalDuration,} from "@/lib/format";
 import {
     artistNamesOf,
+    genresOf,
     groupTracksByDisc,
     groupWorks,
     movementTitleOf,
@@ -44,6 +46,9 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
         (track) => track.sampleRate != null,
     );
     const releaseDate = formatReleaseDate(album.releaseDate);
+    const genres = Array.from(
+        new Set(album.tracks.flatMap((track) => genresOf(track.genre))),
+    );
     const audioDetails = [
         bitDepthTrack?.bitDepth != null
             ? formatBitDepth(bitDepthTrack.bitDepth)
@@ -52,6 +57,11 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
             ? formatSampleRate(sampleRateTrack.sampleRate)
             : null,
     ].filter((value): value is string => Boolean(value));
+    const isHiRes = album.tracks.some(
+        (track) =>
+            (track.bitDepth != null && track.bitDepth > 24) ||
+            (track.sampleRate != null && track.sampleRate > 44100),
+    );
 
     return (
         <div className="flex flex-col gap-6">
@@ -60,25 +70,40 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                 onClick={closeAlbum}
                 className="flex w-fit items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-800"
             >
-                <ArrowLeft className="h-3.5 w-3.5"/>
+                <IconArrowLeft className="h-3.5 w-3.5"/>
                 返回专辑列表
             </button>
 
             <div className="grid items-stretch gap-6 lg:h-[calc(100dvh-11rem)] lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,1.6fr)]">
                 <div className="flex h-full min-w-0 flex-col gap-4">
-                    <CoverArt
-                        coverId={album.coverId}
-                        label={album.album}
-                        className="aspect-square w-full max-w-sm rounded-2xl shadow-2xl shadow-zinc-900/20"
-                        labelClassName="text-5xl"
-                    />
+                    <div className="relative w-full max-w-sm">
+                        <CoverArt
+                            coverId={album.coverId}
+                            label={album.album}
+                            className="aspect-square w-full rounded-2xl shadow-2xl shadow-zinc-900/20"
+                            labelClassName="text-5xl"
+                        />
+                        {genres.length > 0 ? (
+                            <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-wrap gap-1.5">
+                                {genres.map((genre) => (
+                                    <span
+                                        key={genre}
+                                        className="rounded bg-black/65 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm"
+                                    >
+                                        {genre}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : null}
+                    </div>
                     <div className="min-w-0">
-                        <p className="text-[11px] tracking-widest text-zinc-500 uppercase">
-                            专辑
-                        </p>
-                        <h1 className="mt-1 truncate text-2xl font-semibold text-zinc-900 sm:text-3xl">
+                        <MarqueeText
+                            as="h1"
+                            className="mt-1 text-2xl font-semibold text-zinc-900 sm:text-3xl"
+                            title={album.album}
+                        >
                             {album.album}
-                        </h1>
+                        </MarqueeText>
                         <p className="mt-1.5 truncate text-sm text-zinc-600">
                             {album.albumArtist}
                         </p>
@@ -87,9 +112,9 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                         <button
                             type="button"
                             onClick={() => player.playQueue(album.tracks, 0)}
-                            className="flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-zinc-50 transition hover:bg-zinc-700"
+                            className="flex items-center gap-2 rounded-full bg-app-accent px-5 py-2 text-sm font-medium text-white transition hover:brightness-90"
                         >
-                            <Play className="h-4 w-4 fill-current"/>
+                            <IconPlayerPlay className="h-4 w-4 fill-current"/>
                             播放
                         </button>
                         <button
@@ -97,18 +122,32 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                             onClick={() => player.playQueue(album.tracks, 0, {shuffle: true})}
                             className="flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-700 transition hover:bg-zinc-950/5"
                         >
-                            <Shuffle className="h-4 w-4"/>
+                            <IconArrowsShuffle className="h-4 w-4"/>
                             随机播放
                         </button>
                     </div>
                     <div className="flex flex-col gap-1 text-xs text-zinc-500">
                         {audioDetails.length > 0 ? (
-                            <p>{audioDetails.join(" / ")}</p>
+                            <p className="flex items-center gap-2">
+                                {isHiRes ? (
+                                    <img
+                                        src="/hi-res.png"
+                                        alt="高解析度音频"
+                                        title="高解析度音频"
+                                        className="h-5 w-auto"
+                                    />
+                                ) : null}
+                                <span className="text-sm leading-5">
+                                    {audioDetails.join(" / ")}
+                                </span>
+                            </p>
                         ) : null}
-                        {releaseDate ? <p>{releaseDate}</p> : null}
-                        <p>
-                            {album.tracks.length} 首曲目 ·{" "}
-                            {formatTotalDuration(album.duration)}
+                        <p className="flex flex-wrap items-center gap-x-2">
+                            {releaseDate ? <span>{releaseDate}</span> : null}
+                            {releaseDate ? <span>·</span> : null}
+                            <span>{album.tracks.length} 首曲目</span>
+                            <span>·</span>
+                            <span>{formatTotalDuration(album.duration)}</span>
                         </p>
                     </div>
                     {album.copyright ? (

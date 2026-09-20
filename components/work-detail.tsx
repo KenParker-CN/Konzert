@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconPlayerPlay } from "@tabler/icons-react";
 import { useState } from "react";
 import { TrackList } from "@/components/track-list";
 import { useLibrary } from "@/lib/library-provider";
@@ -44,7 +44,7 @@ export function WorkDetail({
         onClick={closeWork}
         className="flex w-fit items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-800"
       >
-        <ArrowLeft className="h-3.5 w-3.5" />
+        <IconArrowLeft className="h-3.5 w-3.5" />
         返回曲库
       </button>
       <header className="flex items-end justify-between gap-4">
@@ -61,9 +61,9 @@ export function WorkDetail({
           type="button"
           onClick={() => player.playQueue(recordings, 0)}
           disabled={recordings.length === 0}
-          className="flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 transition hover:bg-zinc-700 disabled:opacity-40"
+          className="flex items-center gap-2 rounded-full bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-90 disabled:opacity-40"
         >
-          <Play className="h-4 w-4 fill-current" />
+          <IconPlayerPlay className="h-4 w-4 fill-current" />
           播放
         </button>
       </header>
@@ -94,7 +94,7 @@ export function WorkDetail({
             disabled={safePage <= 1}
             className="flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-1 transition hover:bg-zinc-950/5 disabled:opacity-40"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <IconChevronLeft className="h-3.5 w-3.5" />
             上一页
           </button>
           <span className="tabular-nums">
@@ -107,7 +107,7 @@ export function WorkDetail({
             className="flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-1 transition hover:bg-zinc-950/5 disabled:opacity-40"
           >
             下一页
-            <ChevronRight className="h-3.5 w-3.5" />
+            <IconChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}

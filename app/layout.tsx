@@ -5,6 +5,7 @@ import { NavProvider } from "@/lib/nav-provider";
 import { PlayerProvider } from "@/lib/player-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Konzert",
@@ -14,16 +15,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="zh-CN" className="h-full antialiased">
+    <html
+      lang="zh-CN"
+      className="h-full antialiased"
+      suppressHydrationWarning
+    >
       <body className="h-full">
-        {/* 曲库数据（IndexedDB）在最外层，播放器依赖它读取偏好与记录播放次数。 */}
-        <LibraryProvider>
-          <PlayerProvider>
-            <NavProvider>
-              <TooltipProvider>{children}</TooltipProvider>
-            </NavProvider>
-          </PlayerProvider>
-        </LibraryProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {/* 曲库数据（IndexedDB）在最外层，播放器依赖它读取偏好与记录播放次数。 */}
+          <LibraryProvider>
+            <PlayerProvider>
+              <NavProvider>
+                <TooltipProvider>{children}</TooltipProvider>
+              </NavProvider>
+            </PlayerProvider>
+          </LibraryProvider>
+        </ThemeProvider>
         <Toaster position="bottom-center" />
       </body>
     </html>

@@ -42,7 +42,7 @@ export const ALBUM_SORT_LABELS: Record<AlbumSort, string> = {
 export const ALBUM_SORT_DEFAULT_DIR: Record<AlbumSort, SortDir> = {
     artist: "asc",
     album: "asc",
-    date: "asc",
+    date: "desc",
     tracks: "desc",
     added: "desc",
 };
@@ -183,6 +183,15 @@ export function groupAlbums(tracks: Track[]): AlbumSummary[] {
         return current;
     }
 }
+
+/** 拆分音频元数据中的 genre 标签；不从其他字段推断流派。 */
+export function genresOf(value: string): string[] {
+    return value
+        .split(/[,;/]/)
+        .map((genre) => genre.trim())
+        .filter(Boolean);
+}
+
 
 /** 专辑的入库时间：取专辑内曲目的最新 addedAt。 */
 export function albumAddedAt(album: AlbumSummary): number {
@@ -398,7 +407,7 @@ const CATALOG_NUMBER_PATTERNS = [
     /*Handel's*/
     {system: "HWV", pattern: /\bHWV\s+\d+[A-Z]?/i},
     /*Mozart's*/
-    {system: "K", pattern: /\b(?:K|K\.|KV)\s*\d+[A-Z]?/i},
+    {system: "K", pattern: /\b(?:K|K\.|KV)\s*\d+(?:\/[A-Za-z0-9]+)?\b/i},
     /*CPE Bach's*/
     {system: "Wq.", pattern: /\bWq\.\s*\d+(?:\/\d+)?\b/i,},
     {system: "H.", pattern: /\bH\.\s*\d+\b/i,},
@@ -475,13 +484,13 @@ function workSeparatorIndex(title: string): number {
             lastCatalogNumber.index + lastCatalogNumber.display.length;
         const separatorAfterCatalog = title
             .slice(catalogEnd)
-            .search(/[:：]/);
+            .search(/[:：∶]/);
         if (separatorAfterCatalog >= 0) {
             return catalogEnd + separatorAfterCatalog;
         }
         return -1;
     }
-    return title.search(/[:：]/);
+    return title.search(/[:：∶]/);
 }
 
 /** 作品前缀：标题作品/乐章分隔符之前的内容；无冒号或冒号在开头时为 null。 */

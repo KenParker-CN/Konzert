@@ -1,6 +1,6 @@
 "use client";
 
-import {Play} from "lucide-react";
+import {IconPlayerPlay} from "@tabler/icons-react";
 import {EmptyState} from "@/components/empty-state";
 import {TrackList} from "@/components/track-list";
 import {useLibrary} from "@/lib/library-provider";
@@ -55,9 +55,9 @@ export function HistoryView() {
                             )
                         }
                         disabled={played.length === 0}
-                        className="flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-xs font-medium text-zinc-50 transition hover:bg-zinc-700 disabled:opacity-40"
+                        className="flex items-center gap-1.5 rounded-full bg-app-accent px-3.5 py-1.5 text-xs font-medium text-white transition hover:brightness-90 disabled:opacity-40"
                     >
-                        <Play className="h-3.5 w-3.5 fill-current"/>
+                        <IconPlayerPlay className="h-3.5 w-3.5 fill-current"/>
                         继续播放
                     </button>
                     <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type DragEvent } from "react";
-import { CircleAlert, LoaderCircle, Upload, X } from "lucide-react";
+import { IconAlertCircle, IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { PlayerBar } from "@/components/player-bar";
 import { QueuePanel } from "@/components/queue-panel";
 import { Sidebar } from "@/components/sidebar";
@@ -71,7 +71,7 @@ export function AppShell() {
           {/* 扫描进度 */}
           {progress ? (
             <div className="flex items-center gap-3 border-b border-zinc-200 bg-blue-500/10 px-6 py-2.5 text-xs text-blue-700">
-              <LoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              <IconLoader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
               <span className="shrink-0 font-medium">
                 {PHASE_LABELS[progress.phase]}
               </span>
@@ -103,7 +103,7 @@ export function AppShell() {
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
             {!ready ? (
               <p className="flex items-center gap-2 text-xs text-zinc-500">
-                <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
                 正在读取本地曲库…
               </p>
             ) : view === "library" ? (
@@ -122,7 +122,7 @@ export function AppShell() {
           {/* 拖放提示 */}
           {dragging ? (
             <div className="pointer-events-none absolute inset-3 z-40 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-blue-500/50 bg-white/70 backdrop-blur-sm">
-              <Upload className="h-7 w-7 text-blue-600" />
+              <IconUpload className="h-7 w-7 text-blue-600" />
               <p className="text-sm text-blue-700">
                 松开即可导入音频文件或整个文件夹
               </p>
@@ -140,7 +140,7 @@ export function AppShell() {
       {error ? (
         <div className="pointer-events-none fixed right-4 bottom-28 z-50 w-full max-w-sm">
           <div className="pointer-events-auto flex items-start gap-2.5 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-3 text-xs text-rose-800 shadow-2xl shadow-zinc-900/20 backdrop-blur-xl">
-            <CircleAlert className="mt-px h-4 w-4 shrink-0 text-rose-600" />
+            <IconAlertCircle className="mt-px h-4 w-4 shrink-0 text-rose-600" />
             <p className="min-w-0 flex-1 leading-relaxed">{error}</p>
             <button
               type="button"
@@ -148,7 +148,7 @@ export function AppShell() {
               onClick={dismissError}
               className="shrink-0 rounded p-0.5 text-rose-600/70 transition hover:text-rose-900"
             >
-              <X className="h-3.5 w-3.5" />
+              <IconX className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function AppShell() {
       {player.error ? (
         <div className="pointer-events-none fixed right-4 bottom-28 z-50 w-full max-w-sm">
           <div className="pointer-events-auto flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-3 text-xs text-amber-800 shadow-2xl shadow-zinc-900/20 backdrop-blur-xl">
-            <CircleAlert className="mt-px h-4 w-4 shrink-0 text-amber-700" />
+            <IconAlertCircle className="mt-px h-4 w-4 shrink-0 text-amber-700" />
             <p className="min-w-0 flex-1 leading-relaxed">{player.error}</p>
             <button
               type="button"
@@ -165,7 +165,7 @@ export function AppShell() {
               onClick={player.dismissError}
               className="shrink-0 rounded p-0.5 text-amber-600/70 transition hover:text-amber-900"
             >
-              <X className="h-3.5 w-3.5" />
+              <IconX className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>

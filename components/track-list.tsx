@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, ListPlus, Pause, Play, Plus, Trash } from "lucide-react";
+import { IconHeart, IconPlaylistAdd, IconPlayerPause, IconPlayerPlay, IconPlus, IconTrash } from "@tabler/icons-react";
 import { CoverArt } from "@/components/cover-art";
 import {
   ContextMenu,
@@ -96,7 +96,7 @@ export function TrackList({
             }}
             className={`group grid cursor-default grid-cols-[2.25rem_1fr_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors ${albumGridClass} ${
               isCurrent
-                ? "bg-blue-500/10 ring-1 ring-blue-500/25"
+                ? "bg-app-accent-soft ring-1 ring-app-accent"
                 : "hover:bg-zinc-950/5"
             }`}
           >
@@ -105,9 +105,9 @@ export function TrackList({
               {isPlayingThis ? (
                 <>
                   <span className="flex h-4 items-end gap-0.5 group-hover:hidden">
-                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-blue-500" />
-                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-blue-500" />
-                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-blue-500" />
+                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-app-accent" />
+                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-app-accent" />
+                    <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-app-accent" />
                   </span>
                   <button
                     type="button"
@@ -118,7 +118,7 @@ export function TrackList({
                     }}
                     className="hidden text-zinc-700 group-hover:block"
                   >
-                    <Pause className="h-4 w-4" />
+                    <IconPlayerPause className="h-4 w-4" />
                   </button>
                 </>
               ) : (
@@ -126,7 +126,7 @@ export function TrackList({
                   {showNumber ? (
                     <span
                       className={`text-xs tabular-nums group-hover:hidden ${
-                        isCurrent ? "text-blue-600" : "text-zinc-400"
+                        isCurrent ? "text-app-accent" : "text-zinc-400"
                       }`}
                     >
                       {showIndex ? (track.trackNo ?? index + 1) : index + 1}
@@ -141,7 +141,7 @@ export function TrackList({
                     }}
                     className="hidden text-zinc-700 group-hover:block"
                   >
-                    <Play className="h-4 w-4 fill-current" />
+                    <IconPlayerPlay className="h-4 w-4 fill-current" />
                   </button>
                 </>
               )}
@@ -160,7 +160,7 @@ export function TrackList({
               <div className="min-w-0">
                 <div
                   className={`truncate text-sm ${
-                    isCurrent ? "text-blue-700" : "text-zinc-800"
+                    isCurrent ? "text-app-accent" : "text-zinc-800"
                   }`}
                   title={titleFor(track)}
                 >
@@ -208,7 +208,7 @@ export function TrackList({
                     : "text-zinc-500 opacity-0 group-hover:opacity-100 hover:text-zinc-700"
                 }`}
               >
-                <Heart
+                <IconHeart
                   className="h-4 w-4"
                   fill={isFavorite ? "currentColor" : "none"}
                 />
@@ -222,7 +222,7 @@ export function TrackList({
                 }}
                 className="rounded p-1.5 text-zinc-500 opacity-0 transition hover:text-zinc-700 group-hover:opacity-100"
               >
-                <ListPlus className="h-4 w-4" />
+                <IconPlaylistAdd className="h-4 w-4" />
               </button>
               <button
                 type="button"
@@ -233,7 +233,7 @@ export function TrackList({
                 }}
                 className="rounded p-1.5 text-zinc-500 opacity-0 transition hover:text-zinc-700 group-hover:opacity-100"
               >
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-4 w-4" />
               </button>
               {onRemove ? (
                 <button
@@ -245,7 +245,7 @@ export function TrackList({
                   }}
                   className="rounded p-1.5 text-zinc-500 opacity-0 transition hover:text-rose-600 group-hover:opacity-100"
                 >
-                  <Trash className="h-4 w-4" />
+                  <IconTrash className="h-4 w-4" />
                 </button>
               ) : null}
             </div>
@@ -253,15 +253,15 @@ export function TrackList({
             </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuItem onClick={() => player.playTrack(track, queue)}>
-                <Play />
+                <IconPlayerPlay />
                 播放
               </ContextMenuItem>
               <ContextMenuItem onClick={() => toggleFavorite(track.id)}>
-                <Heart />
+                <IconHeart />
                 {isFavorite ? "取消收藏" : "收藏"}
               </ContextMenuItem>
               <ContextMenuItem onClick={() => player.addToQueue(track)}>
-                <ListPlus />
+                <IconPlaylistAdd />
                 添加到播放列表
               </ContextMenuItem>
               <ContextMenuSub>
@@ -285,7 +285,7 @@ export function TrackList({
                 variant="destructive"
                 onClick={() => void removeTracks([track.id])}
               >
-                <Trash />
+                <IconTrash />
                 从库中移除
               </ContextMenuItem>
             </ContextMenuContent>

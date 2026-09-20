@@ -13,6 +13,7 @@
     "core:window:allow-is-maximized",
     "core:window:allow-start-dragging",
     "dialog:default",
+    "opener:default",
     "fs:default",
     "fs:allow-read-file",
     "fs:allow-read-dir",

@@ -33,7 +33,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 2px;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -44,9 +44,53 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+:root[data-accent="violet"] { --app-accent: #7c3aed; }
+:root[data-accent="emerald"] { --app-accent: #059669; }
+:root[data-accent="rose"] { --app-accent: #e11d48; }
+
+.text-app-accent {
+  color: var(--app-accent);
+}
+
+.bg-app-accent {
+  background-color: var(--app-accent);
+}
+
+.bg-app-accent-soft {
+  background-color: color-mix(in srgb, var(--app-accent) 12%, transparent);
+}
+
+.ring-app-accent {
+  --tw-ring-color: color-mix(in srgb, var(--app-accent) 25%, transparent);
+}
+
+.border-app-accent {
+  border-color: color-mix(in srgb, var(--app-accent) 50%, transparent);
+}
+
 html,
 body {
   height: 100%;
+}
+
+.dark body {
+  background: #18181b;
+  color: #f4f4f5;
+}
+
+.dark .bg-white,
+.dark .bg-white\/70,
+.dark .bg-white\/85 {
+  background-color: #27272a;
+}
+
+.dark .border-zinc-200,
+.dark .border-zinc-300 {
+  border-color: #3f3f46;
+}
+
+html {
+  font-size: 17px;
 }
 
 body {
@@ -151,6 +195,20 @@ input[type="range"].konzert-progress-range::-moz-range-progress {
   background: var(--app-accent);
 }
 
+input[type="range"].konzert-volume-range::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    to right,
+    var(--app-accent) var(--range-progress, 0%),
+    rgba(24, 24, 27, 0.14) var(--range-progress, 0%)
+  );
+}
+
+input[type="range"].konzert-volume-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--app-accent);
+}
+
 input[type="range"].konzert-range::-moz-range-thumb {
   width: 14px;
   height: 14px;
@@ -188,6 +246,25 @@ input[type="range"].konzert-range:focus-visible::-moz-range-thumb {
 
 .konzert-eq-bar:nth-child(3) {
   animation-delay: 320ms;
+}
+
+@keyframes konzert-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 1.5rem));
+  }
+}
+
+.konzert-marquee {
+  animation: konzert-marquee 20s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .konzert-marquee {
+    animation: none;
+  }
 }
 
 /* 应用标题栏拖拽区域（Tauri 桌面窗口） */

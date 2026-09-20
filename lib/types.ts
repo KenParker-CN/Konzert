@@ -82,6 +82,9 @@ export interface LibrarySettings {
   muted: boolean;
   shuffle: boolean;
   repeat: RepeatMode;
+  language: "zh-CN" | "en-US";
+  autoWatch: boolean;
+  watchedFolders: string[];
   /** 上次播放的曲目，便于下次启动还原。 */
   lastTrackId: string | null;
 }
@@ -105,6 +108,9 @@ export const DEFAULT_SETTINGS: LibrarySettings = {
   muted: false,
   shuffle: false,
   repeat: "off",
+  language: "zh-CN",
+  autoWatch: true,
+  watchedFolders: [],
   lastTrackId: null,
 };
 

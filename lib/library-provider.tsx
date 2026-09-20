@@ -86,6 +86,7 @@ export interface LibraryContextValue {
   error: string | null;
   storageMode: StorageMode;
   importFolder: () => Promise<void>;
+  refreshLibrary: () => Promise<void>;
   importFiles: (files: File[]) => Promise<void>;
   importFromDrop: (transfer: DataTransfer) => Promise<void>;
   cancelScan: () => void;
@@ -115,6 +116,11 @@ function normalizeSettings(value: unknown): LibrarySettings {
     muted: Boolean(raw.muted),
     shuffle: Boolean(raw.shuffle),
     repeat,
+    language: raw.language === "en-US" ? "en-US" : "zh-CN",
+    autoWatch: raw.autoWatch !== false,
+    watchedFolders: Array.isArray(raw.watchedFolders)
+      ? raw.watchedFolders.filter((path): path is string => typeof path === "string")
+      : [],
     lastTrackId:
       typeof raw.lastTrackId === "string" ? raw.lastTrackId : null,
   };
@@ -197,7 +203,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   /** 启动文件系统监听 */
   useEffect(() => {
-    if (!FileWatcher.isSupported() || !ready) return;
+    if (!FileWatcher.isSupported() || !ready || !settings.autoWatch) return;
 
     const currentTracks = tracksRef.current;
     if (currentTracks.length === 0) return;
@@ -232,7 +238,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       watcher.stop();
       fileWatcherRef.current = null;
     };
-  }, [ready, handleFileChange]);
+  }, [ready, handleFileChange, settings.autoWatch]);
 
   // ------------------------------------------------------------ 初始化
 
@@ -399,6 +405,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     try {
       const source = await pickLibraryDirectory();
       if (source) {
+        if (source.kind === "path") {
+          updateSettings({
+            watchedFolders: [...new Set([...settings.watchedFolders, source.path])],
+          });
+        }
         await runScan((onProgress, signal) =>
           scanDirectory({
             source,
@@ -430,7 +441,31 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         signal,
       }),
     );
-  }, [runScan, scanning]);
+  }, [runScan, scanning, settings.watchedFolders, updateSettings]);
+
+  const refreshLibrary = useCallback(async () => {
+    if (scanning) return;
+    const folders = settings.watchedFolders;
+    if (folders.length === 0) {
+      setError("还没有固定监控的音乐文件夹，请先扫描一个文件夹。");
+      return;
+    }
+
+    try {
+      for (const path of folders) {
+        await runScan((onProgress, signal) =>
+          scanDirectory({
+            source: { kind: "path", path },
+            existingTracks: tracksRef.current,
+            onProgress,
+            signal,
+          }),
+        );
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "刷新音乐库失败");
+    }
+  }, [runScan, scanning, settings.watchedFolders]);
 
   const importFiles = useCallback(
     async (files: File[]) => {
@@ -548,6 +583,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     error,
     storageMode,
     importFolder,
+    refreshLibrary,
     importFiles,
     importFromDrop,
     cancelScan,
