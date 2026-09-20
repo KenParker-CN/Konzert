@@ -75,15 +75,6 @@ export function registerMemoryFiles(files: File[]): Map<string, File> {
   }
   return registered;
 }
-
-export function clearMemoryFiles(): void {
-  memoryFiles.clear();
-}
-
-export function isMemoryFileAvailable(key: string): boolean {
-  return memoryFiles.has(key);
-}
-
 /** 向用户重新申请句柄的读取权限（必须由用户手势触发）。 */
 export async function ensureReadPermission(
   handle: FileSystemFileHandle,
@@ -168,16 +159,4 @@ export async function createPlaybackSource(
     url,
     release: () => URL.revokeObjectURL(url),
   };
-}
-
-export function originLabel(origin: AudioOrigin): string {
-  switch (origin.kind) {
-    case "path":
-      return origin.path;
-    case "handle":
-      return origin.handle.name;
-    case "memory":
-    default:
-      return "仅当前会话可用";
-  }
 }

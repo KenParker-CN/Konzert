@@ -52,7 +52,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
                   className="truncate text-xs text-zinc-500"
                   title={`${track.artist} · ${track.album}`}
                 >
-                  {track.artist} · {track.album}
+                  {track.artist}
                 </p>
               </div>
               <button

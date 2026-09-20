@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "Konzert · 本地音乐播放器",
+  title: "Konzert",
   description:
     "本地优先的音乐播放器：在设备上读取标签与封面、整理曲库并播放，全程无需联网。",
 };

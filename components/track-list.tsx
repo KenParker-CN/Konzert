@@ -15,7 +15,12 @@ interface TrackListProps {
   showNumber?: boolean;
   /** 点击播放时的队列；缺省用 tracks 本身（分页列表可传完整列表）。 */
   queueTracks?: Track[];
-  /** 传入后显示「从曲库移除」按钮。 */
+  /** 展示标题的定制函数（如作品组内只显示冒号后的乐章名）；缺省用曲目原题。 */
+  titleOf?: (track: Track) => string;
+  /** 自定义艺术家展示（如传入，优先于 track.artist，且与上下文一致时可设 null 以隐藏）。 */
+  trackArtist?: (track: Track) => string | null;
+  /** 自定义专辑名展示（如传入，优先于 track.album，null 表示不显示）。 */
+  trackAlbum?: (track: Track) => string | null;
   onRemove?: (track: Track) => void;
   emptyMessage?: string;
 }
@@ -25,12 +30,22 @@ export function TrackList({
   showIndex = true,
   showNumber = true,
   queueTracks,
+  titleOf,
   onRemove,
   emptyMessage = "这里还没有曲目",
+  trackArtist,
+  trackAlbum,
 }: TrackListProps) {
   const player = usePlayer();
   const { favorites, toggleFavorite, settings } = useLibrary();
   const queue = queueTracks ?? tracks;
+  const titleFor = titleOf ?? ((track: Track) => track.title);
+  const artistFor = trackArtist ?? ((track: Track) => track.artist);
+  const albumFor = trackAlbum ?? ((track: Track) => track.album);
+  const showAlbum = tracks.some((track) => albumFor(track) !== null);
+  const albumGridClass = showAlbum
+    ? "sm:grid-cols-[2.25rem_minmax(0,2.2fr)_minmax(0,1.4fr)_4.5rem_auto]"
+    : "sm:grid-cols-[2.25rem_minmax(0,2.2fr)_4.5rem_auto]";
 
   if (tracks.length === 0) {
     return (
@@ -47,6 +62,8 @@ export function TrackList({
         const isPlayingThis = isCurrent && player.isPlaying;
         const isFavorite = favorites.has(track.id);
         const wasLastPlayed = settings.lastTrackId === track.id && !isCurrent;
+        const artist = artistFor(track);
+        const album = albumFor(track);
 
         return (
           <div
@@ -60,7 +77,7 @@ export function TrackList({
                 player.playTrack(track, queue);
               }
             }}
-            className={`group grid cursor-default grid-cols-[2.25rem_1fr_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors sm:grid-cols-[2.25rem_minmax(0,2.2fr)_minmax(0,1.4fr)_4.5rem_auto] ${
+            className={`group grid cursor-default grid-cols-[2.25rem_1fr_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors ${albumGridClass} ${
               isCurrent
                 ? "bg-blue-500/10 ring-1 ring-blue-500/25"
                 : "hover:bg-zinc-950/5"
@@ -100,10 +117,10 @@ export function TrackList({
                   ) : null}
                   <button
                     type="button"
-                    aria-label={`播放 ${track.title}`}
+                    aria-label={`播放 ${titleFor(track)}`}
                     onClick={(event) => {
                       event.stopPropagation();
-                      player.playTrack(track, tracks);
+                      player.playTrack(track, queue);
                     }}
                     className="hidden text-zinc-700 group-hover:block"
                   >
@@ -126,26 +143,31 @@ export function TrackList({
                   className={`truncate text-sm ${
                     isCurrent ? "text-blue-700" : "text-zinc-800"
                   }`}
-                  title={track.title}
+                  title={titleFor(track)}
                 >
-                  {track.title}
+                  {titleFor(track)}
                 </p>
-                <p
-                  className="truncate text-xs text-zinc-600"
-                  title={track.artist}
-                >
-                  {wasLastPlayed ? `${track.artist} · 上次播放` : track.artist}
-                </p>
+                {artist ? (
+                  <p
+                    className="truncate text-xs text-zinc-600"
+                    title={artist}
+                  >
+                    {wasLastPlayed ? `${artist} · 上次播放` : artist}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            {/* 专辑 */}
-            <p
-              className="hidden truncate text-xs text-zinc-600 sm:block"
-              title={track.album}
-            >
-              {track.album}
-            </p>
+            {showAlbum ? (
+              <p
+                className={`hidden truncate text-xs text-zinc-600 sm:block ${
+                  album === null ? "invisible" : ""
+                }`}
+                title={album ?? undefined}
+              >
+                {album ?? ""}
+              </p>
+            ) : null}
 
             {/* 时长 */}
             <span className="hidden text-right text-xs tabular-nums text-zinc-400 sm:block">

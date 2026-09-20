@@ -177,14 +177,15 @@ export async function reparseTrackMetadata(
         albumArtist: metadata.albumArtist,
         album: metadata.album,
         genre: metadata.genre,
-        year: metadata.year,
+        releaseDate: metadata.releaseDate,
         trackNo: metadata.trackNo,
         discNo: metadata.discNo,
         duration: metadata.duration,
         bitrate: metadata.bitrate,
         sampleRate: metadata.sampleRate,
-        codec: metadata.codec,
+        bitDepth: metadata.bitDepth,
         lossless: metadata.lossless,
+        copyright: metadata.copyright,
         fileSize: file.size,
       };
 

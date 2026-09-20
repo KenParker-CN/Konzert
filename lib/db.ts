@@ -120,16 +120,35 @@ async function withTransaction(
 
 // ---------------------------------------------------------------- 曲目
 
+type LegacyTrack = Track & {
+  bitsPerSample?: number | null;
+  year?: number | null;
+};
+
 export async function loadTracks(): Promise<Track[]> {
   if (!storageAvailable()) return [];
   const tracks = await withStore<Track[]>(TRACK_STORE, "readonly", (store) =>
     store.getAll() as IDBRequest<Track[]>,
   );
-  // 旧版本入库的记录没有 composer 字段，读取时统一补默认值。
-  return (tracks ?? []).map((track) => ({
-    ...track,
-    composer: track.composer ?? "",
-  }));
+  // 旧版本入库的记录没有 composer 字段，也可能没有 releaseDate（此前为 year）。
+  return (tracks ?? []).map((track) => {
+    const legacyTrack = track as LegacyTrack;
+    return {
+      ...track,
+      composer: legacyTrack.composer ?? "",
+      bitDepth:
+        legacyTrack.bitDepth ?? legacyTrack.bitsPerSample ?? null,
+      releaseDate:
+        legacyTrack.releaseDate ??
+        (legacyTrack.year != null
+          ? {
+              display: null,
+              year: legacyTrack.year,
+              sortValue: legacyTrack.year * 10000,
+            }
+          : { display: null, year: null, sortValue: 0 }),
+    };
+  });
 }
 
 export async function saveTracks(tracks: Track[]): Promise<void> {

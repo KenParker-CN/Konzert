@@ -340,11 +340,14 @@ export function buildOutcome(
     const existing = existingById.get(id);
 
     // 文件大小一致即视为内容未变化，直接复用（同时保住封面与播放统计）。
+    const needsBitDepthRefresh =
+      existing != null && existing.lossless && existing.bitDepth == null;
     if (
       existing &&
       candidate.fileSize > 0 &&
       existing.fileSize === candidate.fileSize &&
-      existing.duration > 0
+      existing.duration > 0 &&
+      !needsBitDepthRefresh
     ) {
       unchanged += 1;
       continue;
@@ -358,14 +361,15 @@ export function buildOutcome(
       composer: metadata.composer,
       album: metadata.album,
       genre: metadata.genre,
-      year: metadata.year,
+      releaseDate: metadata.releaseDate,
       trackNo: metadata.trackNo,
       discNo: metadata.discNo,
       duration: metadata.duration,
       bitrate: metadata.bitrate,
       sampleRate: metadata.sampleRate,
-      codec: metadata.codec,
+      bitDepth: metadata.bitDepth,
       lossless: metadata.lossless,
+      copyright: metadata.copyright,
       fileName: candidate.fileName,
       fileSize: candidate.fileSize,
       addedAt: existing?.addedAt ?? Date.now(),

@@ -4,7 +4,7 @@ import {
   UNKNOWN_ALBUM,
   UNKNOWN_ARTIST,
   type AlbumSummary,
-  type Track,
+  type Track, ReleaseInfo,
 } from "./types";
 
 /** 排序方向。 */
@@ -34,12 +34,12 @@ export const TRACK_SORT_DEFAULT_DIR: Record<TrackSort, SortDir> = {
   duration: "desc",
 };
 
-export type AlbumSort = "artist" | "album" | "year" | "tracks" | "added";
+export type AlbumSort = "artist" | "album" | "date" | "tracks" | "added";
 
 export const ALBUM_SORT_LABELS: Record<AlbumSort, string> = {
   artist: "艺术家",
   album: "专辑名",
-  year: "年份",
+  date: "日期",
   tracks: "曲目数",
   added: "最近添加",
 };
@@ -47,7 +47,7 @@ export const ALBUM_SORT_LABELS: Record<AlbumSort, string> = {
 export const ALBUM_SORT_DEFAULT_DIR: Record<AlbumSort, SortDir> = {
   artist: "asc",
   album: "asc",
-  year: "asc",
+  date: "asc",
   tracks: "desc",
   added: "desc",
 };
@@ -79,7 +79,7 @@ function normalize(value: string): string {
  * 含分隔符的艺人。
  */
 const ARTIST_SPLIT_PATTERN =
-  /\s*[/,;；、&×]\s*|\s+\/\s+|\s+(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i;
+  /\s*[/,;&×]\s*|\s+\/\s+|\s+(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i;
 
 export function splitArtists(value: string): string[] {
   const trimmed = normalize(value);
@@ -145,12 +145,13 @@ export function groupAlbums(tracks: Track[]): AlbumSummary[] {
     const coverId =
       sorted.find((track) => track.coverId)?.coverId ?? null;
     albums.push({
+      copyright: first.copyright ?? "",
       key,
       album: first.album,
       albumArtist: first.albumArtist,
-      year: sorted.reduce<number | null>(
-        (acc, track) => acc ?? track.year,
-        null,
+      releaseDate: sorted.reduce<ReleaseInfo>(
+        (acc, track) => betterReleaseInfo(acc, track.releaseDate),
+        { display: null, year: null, sortValue: 0 },
       ),
       coverId,
       tracks: sorted,
@@ -166,11 +167,24 @@ export function groupAlbums(tracks: Track[]): AlbumSummary[] {
     if (b.albumArtist === UNKNOWN_ARTIST && a.albumArtist !== UNKNOWN_ARTIST) return -1;
     const byArtist = compareText(a.albumArtist, b.albumArtist);
     if (byArtist !== 0) return byArtist;
-    const yearA = a.year ?? Number.MAX_SAFE_INTEGER;
-    const yearB = b.year ?? Number.MAX_SAFE_INTEGER;
-    if (yearA !== yearB) return yearA - yearB;
+    if (a.releaseDate.sortValue !== b.releaseDate.sortValue) {
+      return a.releaseDate.sortValue - b.releaseDate.sortValue;
+    }
     return compareText(a.album, b.album);
   });
+function betterReleaseInfo(current: ReleaseInfo, next?: ReleaseInfo): ReleaseInfo {
+  // 排序上：哪个信息更完整/更早，就用哪个。
+  if (!next || next.sortValue === 0) return current;
+  if (current.sortValue === 0) return next;
+
+  if (next.sortValue < current.sortValue) return next;
+  if (current.sortValue < next.sortValue) return current;
+
+  // 同一天，则谁有 display 优先保留 display。
+  if (next.display && !current.display) return next;
+  if (current.display && !next.display) return current;
+  return current;
+}
 }
 
 /** 专辑的入库时间：取专辑内曲目的最新 addedAt。 */
@@ -194,10 +208,10 @@ export function sortAlbums(
           compareText(a.album, b.album) ||
           compareText(a.albumArtist, b.albumArtist);
         break;
-      case "year": {
-        const yearA = a.year ?? Number.MAX_SAFE_INTEGER;
-        const yearB = b.year ?? Number.MAX_SAFE_INTEGER;
-        result = yearA - yearB || compareText(a.album, b.album);
+      case "date": {
+        const dateA = a.releaseDate.sortValue ?? Number.MAX_SAFE_INTEGER;
+        const dateB = b.releaseDate.sortValue ?? Number.MAX_SAFE_INTEGER;
+        result = dateA - dateB || compareText(a.album, b.album);
         break;
       }
       case "tracks":
@@ -366,6 +380,18 @@ function workTitleOf(title: string): string {
   const trimmed = title.trim();
   const index = trimmed.search(/[:：]/);
   return index > 0 ? trimmed.slice(0, index).trim() : trimmed;
+}
+
+/**
+ * 乐章显示名：标题首个冒号之后的内容（作品分组内使用，避免重复作品名）；
+ * 无冒号或冒号后为空时返回原题。
+ */
+export function movementTitleOf(title: string): string {
+  const trimmed = title.trim();
+  const index = trimmed.search(/[:：]/);
+  if (index < 0) return trimmed;
+  const rest = trimmed.slice(index + 1).trim();
+  return rest || trimmed;
 }
 
 /** 组内作曲家：按曲目顺序去重合并（忽略大小写），无标签时返回空串。 */

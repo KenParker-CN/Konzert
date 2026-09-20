@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -179,12 +178,14 @@ input[type="range"].konzert-range:focus-visible::-moz-range-thumb {
 
 /* 应用标题栏拖拽区域（Tauri 桌面窗口） */
 [data-tauri-drag-region] {
+  app-region: drag;
   -webkit-app-region: drag;
 }
 
 [data-tauri-drag-region] button,
 [data-tauri-drag-region] a,
 [data-tauri-drag-region] input {
+  app-region: no-drag;
   -webkit-app-region: no-drag;
 }
 

@@ -38,7 +38,7 @@ export function FavoritesView() {
                         我的收藏
                     </h1>
                     <p className="mt-1 text-xs text-zinc-600">
-                        {favoriteTracks.length} 棣栨洸鐩?
+                        {favoriteTracks.length} 首曲目
                     </p>
                 </div>
                 <div className="flex items-center gap-2">

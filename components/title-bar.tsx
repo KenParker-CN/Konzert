@@ -1,45 +1,87 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Minus, Square, X } from "lucide-react";
+import { useState, useEffect, type MouseEvent } from "react";
+import { Minus, Square, SquareStack, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+
+import { isTauriRuntime } from "@/lib/sources";
+
+function safeGetCurrentWindow() {
+  if (!isTauriRuntime()) return null;
+  try {
+    return getCurrentWindow();
+  } catch {
+    return null;
+  }
+}
 
 export function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false);
 
-  useEffect(() => {
-    const checkMaximized = async () => {
-      try {
-        const window = getCurrentWindow();
-        const maximized = await window.isMaximized();
-        setIsMaximized(maximized);
-      } catch (error) {
-        console.error("Failed to check window state:", error);
-      }
-    };
+  const handleStartDragging = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    const window = safeGetCurrentWindow();
+    if (!window) return;
+    void window
+      .startDragging()
+      .catch((error) => {
+        console.error("Failed to start dragging window:", error);
+      });
+  };
 
-    checkMaximized();
+  useEffect(() => {
+    let cancelled = false;
+    const window = safeGetCurrentWindow();
+    if (!window) {
+      console.warn("No current window available (browser build?)");
+      return;
+    }
+    void window
+      .isMaximized()
+      .then((maximized: boolean) => {
+        if (!cancelled) setIsMaximized(maximized);
+      })
+      .catch((error) => {
+        console.error("Failed to check window state:", error);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleMinimize = async () => {
     try {
-      const window = getCurrentWindow();
+      const window = safeGetCurrentWindow();
+      if (!window) return;
       await window.minimize();
     } catch (error) {
       console.error("Failed to minimize window:", error);
     }
   };
 
+  const handleDoubleClick = async () => {
+    try {
+      const window = safeGetCurrentWindow();
+      if (!window) return;
+      await window.toggleMaximize();
+      const maximized = await window.isMaximized();
+      setIsMaximized(maximized);
+    } catch (error) {
+      console.error("Failed to toggle maximize:", error);
+    }
+  };
+
   const handleMaximize = async () => {
     try {
-      const window = getCurrentWindow();
+      const window = safeGetCurrentWindow();
+      if (!window) return;
       if (isMaximized) {
         await window.unmaximize();
-        setIsMaximized(false);
       } else {
-        await window.toggleMaximize();
-        setIsMaximized(true);
+        await window.maximize();
       }
+      const maximized = await window.isMaximized();
+      setIsMaximized(maximized);
     } catch (error) {
       console.error("Failed to toggle maximize:", error);
     }
@@ -47,7 +89,8 @@ export function TitleBar() {
 
   const handleClose = async () => {
     try {
-      const window = getCurrentWindow();
+      const window = safeGetCurrentWindow();
+      if (!window) return;
       await window.close();
     } catch (error) {
       console.error("Failed to close window:", error);
@@ -60,6 +103,8 @@ export function TitleBar() {
       <div
         data-tauri-drag-region
         className="flex flex-1 items-center gap-2.5 px-5 select-none"
+        onMouseDown={handleStartDragging}
+        onDoubleClick={handleDoubleClick}
       >
       </div>
 
@@ -79,7 +124,11 @@ export function TitleBar() {
           aria-label={isMaximized ? "还原" : "最大化"}
           className="flex h-9 w-11 items-center justify-center text-zinc-600 transition hover:bg-zinc-200 hover:text-zinc-900"
         >
-          <Square className="h-3.5 w-3.5" strokeWidth={1.5} />
+          {isMaximized ? (
+            <SquareStack className="h-3.5 w-3.5" strokeWidth={1.5} />
+          ) : (
+            <Square className="h-3.5 w-3.5" strokeWidth={1.5} />
+          )}
         </button>
         <button
           type="button"

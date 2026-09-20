@@ -2,7 +2,7 @@
 
 import { Play } from "lucide-react";
 import { CoverArt } from "@/components/cover-art";
-import { formatTotalDuration } from "@/lib/format";
+import { formatReleaseDate, formatTotalDuration } from "@/lib/format";
 import { useNav } from "@/lib/nav-provider";
 import { usePlayer } from "@/lib/player-provider";
 import type { AlbumSummary } from "@/lib/types";
@@ -49,7 +49,7 @@ export function AlbumGrid({
               type="button"
               aria-label={`播放专辑 ${album.album}`}
               onClick={() => player.playQueue(album.tracks, 0)}
-              className="absolute right-2.5 bottom-2.5 flex h-10 w-10 translate-y-1.5 items-center justify-center rounded-full bg-blue-500 text-white opacity-0 shadow-xl shadow-zinc-900/20 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-blue-600 focus-visible:translate-y-0 focus-visible:opacity-100"
+              className="absolute right-2.5 bottom-2.5 flex h-10 w-10 translate-y-1.5 items-center justify-center rounded-full bg-blue-500 text-white opacity-0 shadow-xl shadow-zinc-900/20 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-blue-600"
             >
               <Play className="ml-0.5 h-4.5 w-4.5 fill-current" />
             </button>
@@ -62,15 +62,8 @@ export function AlbumGrid({
             <p className="truncate text-sm text-zinc-800" title={album.album}>
               {album.album}
             </p>
-            <p
-              className="truncate text-xs text-zinc-500"
-              title={`${album.albumArtist}${album.year ? ` · ${album.year}` : ""}`}
-            >
+            <p className="truncate text-xs text-zinc-500" title={album.albumArtist}>
               {album.albumArtist}
-              {album.year ? ` · ${album.year}` : ""}
-            </p>
-            <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-              {album.tracks.length} 首 · {formatTotalDuration(album.duration)}
             </p>
           </button>
         </div>

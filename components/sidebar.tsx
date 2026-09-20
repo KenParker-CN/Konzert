@@ -49,7 +49,6 @@ export function Sidebar() {
           <p className="text-sm font-semibold tracking-wide text-zinc-800">
             Konzert
           </p>
-          <p className="text-[11px] text-zinc-500">本地音乐播放器</p>
         </div>
       </div>
 
