@@ -42,7 +42,7 @@ export function WorkDetail({
       <button
         type="button"
         onClick={closeWork}
-        className="flex w-fit items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-800"
+        className="flex w-fit items-center gap-2 text-xs leading-4 text-zinc-500 transition hover:text-zinc-800"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
         返回曲库

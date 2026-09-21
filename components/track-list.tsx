@@ -18,7 +18,7 @@ import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
 import { usePlayer } from "@/lib/player-provider";
-import type { Track } from "@/lib/types";
+import { trackFavoriteKey, type Track } from "@/lib/types";
 
 interface TrackListProps {
   tracks: Track[];
@@ -60,8 +60,8 @@ export function TrackList({
   const albumFor = trackAlbum ?? ((track: Track) => track.album);
   const showAlbum = tracks.some((track) => albumFor(track) !== null);
   const albumGridClass = showAlbum
-    ? "sm:grid-cols-[2.25rem_minmax(0,2.2fr)_minmax(0,1.4fr)_4.5rem_auto]"
-    : "sm:grid-cols-[2.25rem_minmax(0,2.2fr)_4.5rem_auto]";
+    ? "sm:grid-cols-[2.25rem_minmax(0,2.2fr)_minmax(0,1.4fr)_4.5rem]"
+    : "sm:grid-cols-[2.25rem_minmax(0,2.2fr)_4.5rem]";
 
   if (tracks.length === 0) {
     return (
@@ -76,7 +76,7 @@ export function TrackList({
       {tracks.map((track, index) => {
         const isCurrent = player.current?.id === track.id;
         const isPlayingThis = isCurrent && player.isPlaying;
-        const isFavorite = favorites.has(track.id);
+        const isFavorite = favorites.has(trackFavoriteKey(track.id));
         const wasLastPlayed = settings.lastTrackId === track.id && !isCurrent;
         const artist = artistFor(track);
         const album = albumFor(track);
@@ -101,8 +101,33 @@ export function TrackList({
             }`}
           >
             {/* 序号 / 播放状态 / 播放按钮 */}
-            <div className="flex h-7 w-7 items-center justify-center">
-              {isPlayingThis ? (
+            <div className="relative flex h-9 w-9 items-center justify-center">
+              {showCoverArt && !showNumber ? (
+                <>
+                  <CoverArt
+                    coverId={track.coverId}
+                    label={track.album}
+                    className="size-9 rounded"
+                    labelClassName="text-xs"
+                  />
+                  <button
+                    type="button"
+                    aria-label={isPlayingThis ? "暂停" : `播放 ${titleFor(track)}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (isPlayingThis) player.toggle();
+                      else player.playTrack(track, queue);
+                    }}
+                    className="absolute inset-0 hidden items-center justify-center rounded bg-black/45 text-white group-hover:flex"
+                  >
+                    {isPlayingThis ? (
+                      <IconPlayerPause className="h-4 w-4" />
+                    ) : (
+                      <IconPlayerPlay className="h-4 w-4 fill-current" />
+                    )}
+                  </button>
+                </>
+              ) : isPlayingThis ? (
                 <>
                   <span className="flex h-4 items-end gap-0.5 group-hover:hidden">
                     <span className="konzert-eq-bar h-4 w-0.5 rounded-full bg-app-accent" />
@@ -149,7 +174,7 @@ export function TrackList({
 
             {/* 标题 + 艺术家 */}
             <div className="flex min-w-0 items-center gap-3">
-              {showCoverArt ? (
+              {showCoverArt && showNumber ? (
                 <CoverArt
                   coverId={track.coverId}
                   label={track.album}
@@ -188,54 +213,53 @@ export function TrackList({
               </p>
             ) : null}
 
-            {/* 时长 */}
-            <span className="hidden text-right text-xs tabular-nums text-zinc-400 sm:block">
-              {formatDuration(track.duration)}
-            </span>
-
-            {/* 操作区 */}
-            <div className="flex items-center justify-end gap-0.5">
-              <button
-                type="button"
-                aria-label={isFavorite ? "取消收藏" : "收藏"}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleFavorite(track.id);
-                }}
-                className={`rounded p-1.5 transition ${
-                  isFavorite
-                    ? "text-rose-500"
-                    : "text-zinc-500 opacity-0 group-hover:opacity-100 hover:text-zinc-700"
-                }`}
-              >
-                <IconHeart
-                  className="h-4 w-4"
-                  fill={isFavorite ? "currentColor" : "none"}
-                />
-              </button>
-              <button
-                type="button"
-                aria-label="下一首播放"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  player.playNextInQueue(track);
-                }}
-                className="rounded p-1.5 text-zinc-500 opacity-0 transition hover:text-zinc-700 group-hover:opacity-100"
-              >
-                <IconPlaylistAdd className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="加入队列"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  player.addToQueue(track);
-                }}
-                className="rounded p-1.5 text-zinc-500 opacity-0 transition hover:text-zinc-700 group-hover:opacity-100"
-              >
-                <IconPlus className="h-4 w-4" />
-              </button>
-              {onRemove ? (
+            {/* 时长；悬浮时操作按钮覆盖在同一位置，避免留下空白列。 */}
+            <div className="relative flex min-w-0 items-center justify-end">
+              <span className="hidden text-right text-xs tabular-nums text-zinc-400 transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 sm:block">
+                {formatDuration(track.duration)}
+              </span>
+              <div className="absolute inset-y-0 right-0 flex items-center justify-end gap-0.5 bg-transparent pl-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                <button
+                  type="button"
+                  aria-label={isFavorite ? "取消收藏" : "收藏"}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleFavorite(trackFavoriteKey(track.id));
+                  }}
+                  className={`rounded p-1.5 transition ${
+                    isFavorite
+                      ? "text-rose-500"
+                      : "text-zinc-500 hover:text-zinc-700"
+                  }`}
+                >
+                  <IconHeart
+                    className="h-4 w-4"
+                    fill={isFavorite ? "currentColor" : "none"}
+                  />
+                </button>
+                <button
+                  type="button"
+                  aria-label="下一首播放"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    player.playNextInQueue(track);
+                  }}
+                  className="rounded p-1.5 text-zinc-500 transition hover:text-zinc-700"
+                >
+                  <IconPlaylistAdd className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="加入队列"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    player.addToQueue(track);
+                  }}
+                  className="rounded p-1.5 text-zinc-500 transition hover:text-zinc-700"
+                >
+                  <IconPlus className="h-4 w-4" />
+                </button>
+                {onRemove ? (
                 <button
                   type="button"
                   aria-label="从曲库移除"
@@ -247,7 +271,8 @@ export function TrackList({
                 >
                   <IconTrash className="h-4 w-4" />
                 </button>
-              ) : null}
+                ) : null}
+              </div>
             </div>
               </div>
             </ContextMenuTrigger>
@@ -256,7 +281,7 @@ export function TrackList({
                 <IconPlayerPlay />
                 播放
               </ContextMenuItem>
-              <ContextMenuItem onClick={() => toggleFavorite(track.id)}>
+              <ContextMenuItem onClick={() => toggleFavorite(trackFavoriteKey(track.id))}>
                 <IconHeart />
                 {isFavorite ? "取消收藏" : "收藏"}
               </ContextMenuItem>

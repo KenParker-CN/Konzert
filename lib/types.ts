@@ -72,6 +72,24 @@ export interface AlbumSummary {
   duration: number;
 }
 
+export type FavoriteKind = "track" | "album" | "artist";
+
+export function favoriteKey(kind: FavoriteKind, value: string): string {
+  return `${kind}:${value}`;
+}
+
+export function trackFavoriteKey(trackId: string): string {
+  return favoriteKey("track", trackId);
+}
+
+export function albumFavoriteKey(albumKey: string): string {
+  return favoriteKey("album", albumKey);
+}
+
+export function artistFavoriteKey(artist: string): string {
+  return favoriteKey("artist", artist.trim().toLocaleLowerCase());
+}
+
 export interface PlayHistoryEntry {
   trackId: string;
   at: number;

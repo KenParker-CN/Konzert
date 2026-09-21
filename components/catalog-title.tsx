@@ -25,7 +25,7 @@ export function CatalogTitle({
       <button
         key={`${reference.system}-${reference.number}-${reference.index}`}
         type="button"
-        className="text-app-accent underline-offset-2 hover:underline"
+        className="inline-flex items-center rounded-md bg-app-accent px-1.5 py-0.5 align-middle text-[0.85em] font-medium leading-none text-white transition hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
         onClick={(event) => {
           event.stopPropagation();
           openWork({ ...reference, composer });

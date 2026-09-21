@@ -6,6 +6,7 @@ import { PlayerProvider } from "@/lib/player-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
   title: "Konzert",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     "本地优先的音乐播放器：在设备上读取标签与封面、整理曲库并播放，全程无需联网。",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout() {
   return (
     <html
       lang="zh-CN"
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LibraryProvider>
             <PlayerProvider>
               <NavProvider>
-                <TooltipProvider>{children}</TooltipProvider>
+                <TooltipProvider>
+                  <AppShell />
+                </TooltipProvider>
               </NavProvider>
             </PlayerProvider>
           </LibraryProvider>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { IconAlertCircle, IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { PlayerBar } from "@/components/player-bar";
 import { QueuePanel } from "@/components/queue-panel";
@@ -23,8 +23,8 @@ const PHASE_LABELS: Record<ScanPhase, string> = {
   saving: "正在写入本地曲库",
 };
 
-export function AppShell() {
-  const { view } = useNav();
+export function AppShell({ children }: { children?: ReactNode }) {
+  const { view, albumKey, artistName, work } = useNav();
   const {
     ready,
     progress,
@@ -37,6 +37,11 @@ export function AppShell() {
   const player = usePlayer();
   const [queueOpen, setQueueOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [view, albumKey, artistName, work]);
 
   const handleDragOver = (event: DragEvent<HTMLElement>) => {
     if (!event.dataTransfer.types.includes("Files")) return;
@@ -100,8 +105,11 @@ export function AppShell() {
             </div>
           ) : null}
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-            {!ready ? (
+          <div
+            ref={contentRef}
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-6"
+          >
+            {children ?? (!ready ? (
               <p className="flex items-center gap-2 text-xs text-zinc-500">
                 <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
                 正在读取本地曲库…
@@ -114,7 +122,7 @@ export function AppShell() {
               <HistoryView />
             ) : (
               <SettingsView />
-            )}
+            ))}
           </div>
 
           <QueuePanel open={queueOpen} onClose={() => setQueueOpen(false)} />

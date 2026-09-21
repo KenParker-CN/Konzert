@@ -83,7 +83,11 @@ export function HistoryView() {
                             className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
                         >
 
-                            <TrackList tracks={[item.track]} showNumber={false}/>
+                            <TrackList
+                                tracks={[item.track]}
+                                showNumber={false}
+                                showCoverArt
+                            />
                         </div>
                     ))}
                 </div>

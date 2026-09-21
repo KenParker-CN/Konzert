@@ -64,6 +64,45 @@
   --tw-ring-color: color-mix(in srgb, var(--app-accent) 25%, transparent);
 }
 
+.cover-shimmer {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.cover-shimmer::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.02) 38%,
+    rgba(255, 255, 255, 0.34) 50%,
+    rgba(255, 255, 255, 0.02) 62%,
+    transparent 75%
+  );
+  transform: translateX(-120%);
+  animation: cover-shimmer 4.5s ease-in-out infinite;
+}
+
+@keyframes cover-shimmer {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cover-shimmer::after {
+    animation: none;
+  }
+}
+
 .border-app-accent {
   border-color: color-mix(in srgb, var(--app-accent) 50%, transparent);
 }
@@ -87,6 +126,52 @@ body {
 .dark .border-zinc-200,
 .dark .border-zinc-300 {
   border-color: #3f3f46;
+}
+
+.dark .text-zinc-900 {
+  color: #f4f4f5;
+}
+
+.dark .text-zinc-800 {
+  color: #e4e4e7;
+}
+
+.dark .text-zinc-700 {
+  color: #d4d4d8;
+}
+
+.dark .text-zinc-600,
+.dark .text-zinc-500 {
+  color: #a1a1aa;
+}
+
+.dark .text-zinc-400 {
+  color: #71717a;
+}
+
+.dark .text-zinc-300 {
+  color: #52525b;
+}
+
+.dark .hover\:text-zinc-900:hover {
+  color: #fafafa;
+}
+
+.dark .hover\:text-zinc-800:hover,
+.dark .hover\:text-zinc-700:hover {
+  color: #f4f4f5;
+}
+
+.dark .hover\:text-zinc-600:hover {
+  color: #e4e4e7;
+}
+
+.dark .bg-zinc-100 {
+  background-color: #3f3f46;
+}
+
+.dark .bg-zinc-200 {
+  background-color: #52525b;
 }
 
 html {

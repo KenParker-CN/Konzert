@@ -8,8 +8,8 @@ export function formatDuration(seconds: number | null | undefined): string {
     const secs = total % 60;
     const pad = (value: number) => value.toString().padStart(2, "0");
     return hours > 0
-        ? `${hours}:${pad(minutes)}:${pad(secs)}`
-        : `${minutes}:${pad(secs)}`;
+        ? `${pad(hours)}:${pad(minutes)}:${pad(secs)}`
+        : `${pad(minutes)}:${pad(secs)}`;
 }
 
 export function formatTotalDuration(seconds: number): string {

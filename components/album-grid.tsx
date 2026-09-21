@@ -17,6 +17,7 @@ import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
 import { usePlayer } from "@/lib/player-provider";
 import type { AlbumSummary } from "@/lib/types";
+import { albumFavoriteKey, trackFavoriteKey } from "@/lib/types";
 
 interface AlbumGridProps {
   albums: AlbumSummary[];
@@ -90,19 +91,23 @@ export function AlbumGrid({
             <ContextMenuItem
               onClick={() => {
                 const shouldFavorite = album.tracks.some(
-                  (track) => !favorites.has(track.id),
+                  (track) => !favorites.has(trackFavoriteKey(track.id)),
                 );
                 for (const track of album.tracks) {
-                  if (favorites.has(track.id) !== shouldFavorite) {
-                    toggleFavorite(track.id);
+                  if (favorites.has(trackFavoriteKey(track.id)) !== shouldFavorite) {
+                    toggleFavorite(trackFavoriteKey(track.id));
                   }
                 }
               }}
             >
               <IconHeart />
-              {album.tracks.every((track) => favorites.has(track.id))
-                ? "取消收藏"
-                : "收藏"}
+              {album.tracks.every((track) => favorites.has(trackFavoriteKey(track.id)))
+                ? "取消收藏曲目"
+                : "收藏曲目"}
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => toggleFavorite(albumFavoriteKey(album.key))}>
+              <IconHeart />
+              {favorites.has(albumFavoriteKey(album.key)) ? "取消收藏专辑" : "收藏专辑"}
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => {

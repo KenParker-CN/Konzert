@@ -10,7 +10,7 @@ import {
   IconLoader2,
   IconSettings,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { AppIcon } from "@/components/app-icon";
 import { formatTotalDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
@@ -29,6 +29,19 @@ const STORAGE_LABELS: Record<string, string> = {
   session: "兼容模式 · 本次会话有效",
 };
 
+const SIDEBAR_STORAGE_KEY = "konzert-sidebar-collapsed";
+const subscribeToSidebarState = (onStoreChange: () => void) => {
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === SIDEBAR_STORAGE_KEY) onStoreChange();
+  };
+  window.addEventListener("storage", handleStorage);
+  return () => window.removeEventListener("storage", handleStorage);
+};
+const getSidebarState = () =>
+  typeof window !== "undefined" &&
+  window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+const getServerSidebarState = () => false;
+
 export function Sidebar() {
   const { view, setView, albumKey, closeAlbum } = useNav();
   const {
@@ -41,24 +54,20 @@ export function Sidebar() {
     storageMode,
     ready,
   } = useLibrary();
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = useSyncExternalStore(
+    subscribeToSidebarState,
+    getSidebarState,
+    getServerSidebarState,
+  );
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      setCollapsed(
-        window.localStorage.getItem("konzert-sidebar-collapsed") === "true",
-      );
-    });
-    return () => cancelAnimationFrame(frame);
+  const toggleCollapsed = useCallback(() => {
+    const next = !getSidebarState();
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+    window.dispatchEvent(new StorageEvent("storage", {
+      key: SIDEBAR_STORAGE_KEY,
+      newValue: String(next),
+    }));
   }, []);
-
-  const toggleCollapsed = () => {
-    setCollapsed((current) => {
-      const next = !current;
-      window.localStorage.setItem("konzert-sidebar-collapsed", String(next));
-      return next;
-    });
-  };
 
   const activeView = albumKey ? "library" : view;
 

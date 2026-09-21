@@ -46,6 +46,7 @@ import {
   type RepeatMode,
   type ScanProgress,
   type Track,
+  trackFavoriteKey,
 } from "./types";
 
 /** 历史记录上限，避免无限增长。 */
@@ -260,7 +261,15 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           ]);
         if (cancelled) return;
         setTracks(storedTracks);
-        setFavorites(new Set(storedFavorites));
+        const migratedFavorites = storedFavorites.map((key) =>
+          key.startsWith("track:") || key.startsWith("album:") || key.startsWith("artist:")
+            ? key
+            : trackFavoriteKey(key),
+        );
+        setFavorites(new Set(migratedFavorites));
+        if (migratedFavorites.some((key, index) => key !== storedFavorites[index])) {
+          void saveKv(KV_FAVORITES, migratedFavorites);
+        }
         const normalizedHistory = dedupeHistory(storedHistory).slice(
           0,
           HISTORY_LIMIT,
@@ -289,11 +298,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   // ------------------------------------------------------------ 收藏/历史
 
-  const toggleFavorite = useCallback((trackId: string) => {
+  const toggleFavorite = useCallback((entityKey: string) => {
     setFavorites((current) => {
       const next = new Set(current);
-      if (next.has(trackId)) next.delete(trackId);
-      else next.add(trackId);
+      if (next.has(entityKey)) next.delete(entityKey);
+      else next.add(entityKey);
       void saveKv(KV_FAVORITES, [...next]);
       return next;
     });

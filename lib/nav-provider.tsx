@@ -1,14 +1,15 @@
 "use client";
 
 /**
- * 极简视图导航。
+ * 基于 Next.js App Router 的客户端导航适配层。
  *
- * 应用是静态导出（Tauri 内嵌 out/），因此不做路由跳转：
- * 所有视图都在同一个页面里切换，播放器不会因切换而中断。
+ * 页面仍由同一个静态 Shell 渲染；资源 ID 来自运行时 IndexedDB，
+ * 因此不需要也不尝试在构建期生成动态页面。
  */
 
 import {
   createContext,
+  useEffect,
   useCallback,
   useContext,
   useMemo,
@@ -21,9 +22,7 @@ export type ViewName = "library" | "favorites" | "history" | "settings";
 
 interface NavContextValue {
   view: ViewName;
-  /** 非空时展示专辑详情。 */
   albumKey: string | null;
-  /** 需要在艺术家视图中展开的艺术家。 */
   artistName: string | null;
   work: CatalogReference & { composer: string } | null;
   setView: (view: ViewName) => void;
@@ -37,57 +36,124 @@ interface NavContextValue {
 
 const NavContext = createContext<NavContextValue | null>(null);
 
-export function NavProvider({ children }: { children: ReactNode }) {
-  const [view, setViewState] = useState<ViewName>("library");
-  const [albumKey, setAlbumKey] = useState<string | null>(null);
-  const [artistName, setArtistName] = useState<string | null>(null);
-  const [work, setWork] = useState<(CatalogReference & { composer: string }) | null>(
-    null,
+function decodeSegment(segment: string): string | null {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return null;
+  }
+}
+
+function routeState(pathname: string): {
+  view: ViewName;
+  albumKey: string | null;
+  artistName: string | null;
+  work: CatalogReference & { composer: string } | null;
+} {
+  const segments = pathname.split("/").filter(Boolean);
+  const resource = segments[0];
+  const id = segments.length === 2 ? decodeSegment(segments[1]) : null;
+
+  if (resource === "settings") {
+    return {view: "settings", albumKey: null, artistName: null, work: null};
+  }
+  if (resource === "favorites") {
+    return {view: "favorites", albumKey: null, artistName: null, work: null};
+  }
+  if (resource === "history") {
+    return {view: "history", albumKey: null, artistName: null, work: null};
+  }
+  if (resource === "albums" && id) {
+    return {view: "library", albumKey: id, artistName: null, work: null};
+  }
+  if (resource === "artists" && id) {
+    return {view: "library", albumKey: null, artistName: id, work: null};
+  }
+  if (resource === "tracks" && id) {
+    const [system, number, composer] = id.split("|");
+    if (system && number && composer) {
+      return {
+        view: "library",
+        albumKey: null,
+        artistName: null,
+        work: {
+          system,
+          number,
+          display: `${system} ${number}`,
+          index: 0,
+          composer,
+        },
+      };
+    }
+  }
+
+  return {view: "library", albumKey: null, artistName: null, work: null};
+}
+
+export function NavProvider({children}: { children: ReactNode }) {
+  const [pathname, setPathname] = useState(() =>
+    typeof window === "undefined" ? "/library" : window.location.pathname || "/library",
   );
+  const state = useMemo(() => routeState(pathname), [pathname]);
 
-  const setView = useCallback((next: ViewName) => {
-    setViewState(next);
-    setAlbumKey(null);
-    setArtistName(null);
-    setWork(null);
+  useEffect(() => {
+    const initialPath = window.location.pathname || "/library";
+    if (initialPath === "/") {
+      window.history.replaceState(null, "", "/library/");
+    }
+
+    const handlePopState = () => {
+      setPathname(window.location.pathname || "/library");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const openAlbum = useCallback((next: string) => {
-    setAlbumKey(next);
-    setArtistName(null);
-    setWork(null);
+  const push = useCallback((path: string) => {
+    window.history.pushState(null, "", `${path}/`);
+    setPathname(path);
   }, []);
-  const openArtist = useCallback((next: string) => {
-    setViewState("library");
-    setAlbumKey(null);
-    setArtistName(next);
-    setWork(null);
+
+  const setView = useCallback((view: ViewName) => {
+    const path = view === "library" ? "/library" : `/${view}`;
+    push(path);
+  }, [push]);
+
+  const openAlbum = useCallback((albumKey: string) => {
+    push(`/albums/${encodeURIComponent(albumKey)}`);
+  }, [push]);
+
+  const openArtist = useCallback((artistName: string) => {
+    push(`/artists/${encodeURIComponent(artistName)}`);
+  }, [push]);
+
+  const openWork = useCallback((work: CatalogReference & { composer: string }) => {
+    const resourceId = [work.system, work.number, work.composer]
+      .join("|");
+    push(`/tracks/${encodeURIComponent(resourceId)}`);
+  }, [push]);
+
+  const goBack = useCallback((fallback = "/library") => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.history.replaceState(null, "", `${fallback}/`);
+      setPathname(fallback);
+    }
   }, []);
-  const closeArtist = useCallback(() => setArtistName(null), []);
-  const openWork = useCallback((next: CatalogReference & { composer: string }) => {
-    setViewState("library");
-    setAlbumKey(null);
-    setArtistName(null);
-    setWork(next);
-  }, []);
-  const closeAlbum = useCallback(() => setAlbumKey(null), []);
-  const closeWork = useCallback(() => setWork(null), []);
 
   const value = useMemo(
     () => ({
-      view,
-      albumKey,
-      artistName,
-      work,
+      ...state,
       setView,
       openAlbum,
       openArtist,
-      closeArtist,
+      closeArtist: goBack,
       openWork,
-      closeAlbum,
-      closeWork,
+      closeAlbum: goBack,
+      closeWork: goBack,
     }),
-    [view, albumKey, artistName, work, setView, openAlbum, openArtist, closeArtist, openWork, closeAlbum, closeWork],
+    [state, setView, openAlbum, openArtist, goBack, openWork],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

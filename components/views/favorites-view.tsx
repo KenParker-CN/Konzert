@@ -3,12 +3,15 @@
 import {IconClock, IconHeart, IconPlayerPlay, IconArrowsShuffle} from "@tabler/icons-react";
 import {EmptyState} from "@/components/empty-state";
 import {TrackList} from "@/components/track-list";
+import {AlbumGrid} from "@/components/album-grid";
 import {useLibrary} from "@/lib/library-provider";
 import {usePlayer} from "@/lib/player-provider";
+import {artistNamesOf} from "@/lib/catalog";
+import {artistFavoriteKey, trackFavoriteKey} from "@/lib/types";
 
 export function FavoritesView() {
     const {
-        tracks,
+        tracks, albums,
         favorites,
         importFolder,
         scanning,
@@ -17,7 +20,11 @@ export function FavoritesView() {
     } = useLibrary();
     const player = usePlayer();
 
-    const favoriteTracks = tracks.filter((track) => favorites.has(track.id));
+    const favoriteTracks = tracks.filter((track) => favorites.has(trackFavoriteKey(track.id)));
+    const favoriteAlbums = albums.filter((album) => favorites.has(`album:${album.key}`));
+    const favoriteArtists = [...new Set(
+        tracks.flatMap(artistNamesOf).filter((artist) => favorites.has(artistFavoriteKey(artist))),
+    )];
 
     if (tracks.length === 0) {
         return (
@@ -67,15 +74,36 @@ export function FavoritesView() {
 
             <p className="flex items-center gap-1.5 text-[11px] text-zinc-500">
                 <IconClock className="h-3 w-3"/>
-                收藏保存在本机，删除曲库记录时也会一并移除
+                收藏保存在本机，可分别收藏专辑、艺术家和曲目
             </p>
 
-            <TrackList
-                tracks={favoriteTracks}
-                showIndex={false}
-                onRemove={(track) => void removeTracks([track.id])}
-                emptyMessage="还没有收藏的曲目，在列表里点❤️即可收藏"
-            />
+            {favoriteArtists.length > 0 ? (
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-base font-medium text-zinc-800">艺术家</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {favoriteArtists.map((artist) => (
+                            <span key={artist} className="rounded-full bg-app-accent-soft px-3 py-1 text-sm text-zinc-700">
+                                {artist}
+                            </span>
+                        ))}
+                    </div>
+                </section>
+            ) : null}
+            {favoriteAlbums.length > 0 ? (
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-base font-medium text-zinc-800">专辑</h2>
+                    <AlbumGrid albums={favoriteAlbums} />
+                </section>
+            ) : null}
+            <section className="flex flex-col gap-2">
+                <h2 className="text-base font-medium text-zinc-800">曲目</h2>
+                <TrackList
+                    tracks={favoriteTracks}
+                    showIndex={false}
+                    onRemove={(track) => void removeTracks([track.id])}
+                    emptyMessage="还没有收藏的曲目，在列表里点❤️即可收藏"
+                />
+            </section>
         </div>
     );
 }

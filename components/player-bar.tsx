@@ -17,6 +17,7 @@ import { CoverArt } from "@/components/cover-art";
 import { MarqueeText } from "@/components/marquee-text";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
+import { trackFavoriteKey } from "@/lib/types";
 import { usePlayer } from "@/lib/player-provider";
 
 interface PlayerBarProps {
@@ -29,7 +30,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
   const { favorites, toggleFavorite } = useLibrary();
 
   const track = player.current;
-  const isFavorite = track ? favorites.has(track.id) : false;
+  const isFavorite = track ? favorites.has(trackFavoriteKey(track.id)) : false;
   const progressMax = player.duration > 0 ? player.duration : 1;
   const progressPercent =
     player.duration > 0
@@ -37,16 +38,31 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
       : 0;
 
   return (
-    <div className="border-t border-zinc-200 bg-white/70 px-4 py-3 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-[1600px] grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="border-t border-zinc-200 bg-white/70 px-4 py-2 backdrop-blur-xl">
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
         {/* 当前曲目 */}
         <div className="flex min-w-0 items-center gap-3">
           {track ? (
             <>
+              <button
+                type="button"
+                aria-label={isFavorite ? "取消收藏" : "收藏"}
+                onClick={() => toggleFavorite(trackFavoriteKey(track.id))}
+                className={`shrink-0 rounded p-1.5 transition ${
+                  isFavorite
+                    ? "text-rose-500"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                <IconHeart
+                  className="h-4 w-4"
+                  fill={isFavorite ? "currentColor" : "none"}
+                />
+              </button>
               <CoverArt
                 coverId={track.coverId}
                 label={track.album}
-                className="h-12 w-12 shrink-0 rounded-md shadow-lg shadow-zinc-900/15"
+                className="h-10 w-10 shrink-0 rounded-md shadow-lg shadow-zinc-900/15"
                 labelClassName="text-sm"
               />
               <div className="min-w-0">
@@ -64,21 +80,6 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
                   {track.artist}
                 </p>
               </div>
-              <button
-                type="button"
-                aria-label={isFavorite ? "取消收藏" : "收藏"}
-                onClick={() => toggleFavorite(track.id)}
-                className={`ml-1 shrink-0 rounded p-1.5 transition ${
-                  isFavorite
-                    ? "text-rose-500"
-                    : "text-zinc-500 hover:text-zinc-700"
-                }`}
-              >
-                <IconHeart
-                  className="h-4 w-4"
-                  fill={isFavorite ? "currentColor" : "none"}
-                />
-              </button>
             </>
           ) : (
             <p className="text-sm text-zinc-500">
@@ -88,7 +89,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
         </div>
 
         {/* 播放控制 */}
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -119,7 +120,7 @@ export function PlayerBar({ queueOpen, onToggleQueue }: PlayerBarProps) {
               aria-label={player.isPlaying ? "暂停" : "播放"}
               onClick={player.toggle}
               disabled={!track}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-app-accent text-white shadow-lg shadow-zinc-900/15 transition hover:scale-105 hover:brightness-90 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:scale-100"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-app-accent text-white shadow-lg shadow-zinc-900/15 transition hover:scale-105 hover:brightness-90 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:scale-100"
             >
               {player.isPlaying ? (
                 <IconPlayerPause className="h-5 w-5 fill-current" />
