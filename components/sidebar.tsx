@@ -9,6 +9,7 @@ import {
   IconDisc,
   IconMusic,
   IconUsers,
+  IconPiano,
   IconLoader2,
   IconSettings,
 } from "@tabler/icons-react";
@@ -21,6 +22,7 @@ import { useNav, type ViewName } from "@/lib/nav-provider";
 const NAV_ITEMS: { id: ViewName; label: string; icon: typeof IconDisc }[] = [
   { id: "albums", label: "专辑", icon: IconDisc },
   { id: "artists", label: "艺术家", icon: IconUsers },
+  { id: "composers", label: "作曲家", icon: IconPiano },
   { id: "songs", label: "歌曲", icon: IconMusic },
   { id: "favorites", label: "我的收藏", icon: IconHeart },
   { id: "history", label: "播放历史", icon: IconClock },

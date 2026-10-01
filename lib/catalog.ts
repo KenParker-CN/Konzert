@@ -282,6 +282,23 @@ export function groupArtists(tracks: Track[]): ArtistSummary[] {
 }
 
 /** 艺术家分组排序；dir 缺省时使用该排序键的默认方向。 */
+export function groupComposers(tracks: Track[]): ArtistSummary[] {
+    const groups = new Map<string, ArtistSummary>();
+    for (const track of tracks) {
+        const name = track.composer.trim();
+        if (!name) continue;
+        const key = name.toLocaleLowerCase();
+        const group = groups.get(key);
+        if (group) {
+            group.tracks.push(track);
+            group.duration += track.duration || 0;
+        } else {
+            groups.set(key, {name, tracks: [track], duration: track.duration || 0});
+        }
+    }
+    return [...groups.values()].sort((a, b) => compareText(a.name, b.name));
+}
+
 export function sortArtists(
     artists: ArtistSummary[],
     sort: ArtistSort = "name",
@@ -350,12 +367,12 @@ export function sortTracks(
     return sorted;
 }
 
-/** 在标题 / 艺术家 / 专辑 / 流派 / 文件名上做不区分大小写的包含匹配。 */
+/** 在标题 / 艺术家 / 作曲家 / 专辑 / 流派 / 文件名上做不区分大小写的包含匹配。 */
 export function searchTracks(tracks: Track[], query: string): Track[] {
     const needle = query.trim().toLowerCase();
     if (!needle) return tracks;
     return tracks.filter((track) =>
-        [track.title, track.artist, track.album, track.genre, track.fileName].some(
+        [track.title, track.artist, track.composer, track.album, track.genre, track.fileName].some(
             (field) => field.toLowerCase().includes(needle),
         ),
     );

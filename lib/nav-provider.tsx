@@ -14,6 +14,7 @@ import {
   useContext,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import type { CatalogReference } from "./catalog";
@@ -21,6 +22,7 @@ import type { CatalogReference } from "./catalog";
 export type ViewName =
   | "albums"
   | "artists"
+  | "composers"
   | "songs"
   | "favorites"
   | "history"
@@ -31,11 +33,14 @@ interface NavContextValue {
   view: ViewName;
   albumKey: string | null;
   artistName: string | null;
+  composerName: string | null;
   work: CatalogReference & { composer: string } | null;
   setView: (view: ViewName) => void;
   openAlbum: (albumKey: string) => void;
   openArtist: (artistName: string) => void;
   closeArtist: () => void;
+  openComposer: (composerName: string) => void;
+  closeComposer: () => void;
   openWork: (work: CatalogReference & { composer: string }) => void;
   closeWork: () => void;
   closeAlbum: () => void;
@@ -43,6 +48,24 @@ interface NavContextValue {
 }
 
 const NavContext = createContext<NavContextValue | null>(null);
+const NAVIGATION_EVENT = "konzert:navigate";
+
+function subscribeToPathname(onChange: () => void) {
+  window.addEventListener("popstate", onChange);
+  window.addEventListener(NAVIGATION_EVENT, onChange);
+  return () => {
+    window.removeEventListener("popstate", onChange);
+    window.removeEventListener(NAVIGATION_EVENT, onChange);
+  };
+}
+
+function getPathname() {
+  return normalizePathname(window.location.pathname);
+}
+
+function getServerPathname() {
+  return "/library";
+}
 
 function decodeSegment(segment: string): string | null {
   try {
@@ -60,6 +83,7 @@ function normalizePathname(pathname: string): string {
 function fallbackPathForDetail(pathname: string): string {
   const resource = pathname.split("/").filter(Boolean)[0];
   if (resource === "artists") return "/artists";
+  if (resource === "composers") return "/composers";
   if (resource === "tracks") return "/songs";
   return "/albums";
 }
@@ -78,6 +102,11 @@ function backLabelForPath(pathname: string): string {
       ? "返回艺术家详情"
       : "返回艺术家列表";
   }
+  if (resource === "composers") {
+    return pathname.split("/").filter(Boolean).length > 1
+      ? "返回作曲家详情"
+      : "返回作曲家列表";
+  }
   if (resource === "songs") return "返回歌曲列表";
   if (resource === "tracks") return "返回作品详情";
   return "返回专辑列表";
@@ -87,6 +116,7 @@ function routeState(pathname: string): {
   view: ViewName;
   albumKey: string | null;
   artistName: string | null;
+  composerName: string | null;
   work: CatalogReference & { composer: string } | null;
 } {
   const segments = pathname.split("/").filter(Boolean);
@@ -94,22 +124,25 @@ function routeState(pathname: string): {
   const id = segments.length === 2 ? decodeSegment(segments[1]) : null;
 
   if (resource === "settings") {
-    return {view: "settings", albumKey: null, artistName: null, work: null};
+    return {view: "settings", albumKey: null, artistName: null, composerName: null, work: null};
   }
   if (resource === "favorites") {
-    return {view: "favorites", albumKey: null, artistName: null, work: null};
+    return {view: "favorites", albumKey: null, artistName: null, composerName: null, work: null};
   }
   if (resource === "history") {
-    return {view: "history", albumKey: null, artistName: null, work: null};
+    return {view: "history", albumKey: null, artistName: null, composerName: null, work: null};
   }
   if (resource === "albums") {
-    return {view: "albums", albumKey: id, artistName: null, work: null};
+    return {view: "albums", albumKey: id, artistName: null, composerName: null, work: null};
   }
   if (resource === "artists") {
-    return {view: "artists", albumKey: null, artistName: id, work: null};
+    return {view: "artists", albumKey: null, artistName: id, composerName: null, work: null};
+  }
+  if (resource === "composers") {
+    return {view: "composers", albumKey: null, artistName: null, composerName: id, work: null};
   }
   if (resource === "songs") {
-    return {view: "songs", albumKey: null, artistName: null, work: null};
+    return {view: "songs", albumKey: null, artistName: null, composerName: null, work: null};
   }
   if (resource === "tracks" && id) {
     const [system, number, composer] = id.split("|");
@@ -118,6 +151,7 @@ function routeState(pathname: string): {
         view: "songs",
         albumKey: null,
         artistName: null,
+        composerName: null,
         work: {
           system,
           number,
@@ -129,14 +163,14 @@ function routeState(pathname: string): {
     }
   }
 
-  return {view: "albums", albumKey: null, artistName: null, work: null};
+  return {view: "albums", albumKey: null, artistName: null, composerName: null, work: null};
 }
 
 export function NavProvider({children}: { children: ReactNode }) {
-  const [pathname, setPathname] = useState(() =>
-    typeof window === "undefined"
-      ? "/library"
-      : normalizePathname(window.location.pathname),
+  const pathname = useSyncExternalStore(
+    subscribeToPathname,
+    getPathname,
+    getServerPathname,
   );
   const [detailOrigins, setDetailOrigins] = useState<Map<string, string>>(
     () => new Map(),
@@ -151,21 +185,15 @@ export function NavProvider({children}: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    const initialPath = window.location.pathname || "/library";
-    if (initialPath === "/") {
+    if (window.location.pathname === "/") {
       window.history.replaceState(null, "", "/library/");
+      window.dispatchEvent(new Event(NAVIGATION_EVENT));
     }
-
-    const handlePopState = () => {
-      setPathname(normalizePathname(window.location.pathname));
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   const push = useCallback((path: string) => {
     window.history.pushState(null, "", `${path}/`);
-    setPathname(path);
+    window.dispatchEvent(new Event(NAVIGATION_EVENT));
   }, []);
 
   const setView = useCallback((view: ViewName) => {
@@ -184,6 +212,12 @@ export function NavProvider({children}: { children: ReactNode }) {
     push(path);
   }, [pathname, push]);
 
+  const openComposer = useCallback((composerName: string) => {
+    const path = `/composers/${encodeURIComponent(composerName)}`;
+    setDetailOrigins((current) => new Map(current).set(path, pathname));
+    push(path);
+  }, [pathname, push]);
+
   const openWork = useCallback((work: CatalogReference & { composer: string }) => {
     const resourceId = [work.system, work.number, work.composer].join("|");
     const path = `/tracks/${encodeURIComponent(resourceId)}`;
@@ -194,7 +228,7 @@ export function NavProvider({children}: { children: ReactNode }) {
   const closeDetail = useCallback(() => {
     const target = detailOrigins.get(pathname) ?? fallbackPathForDetail(pathname);
     window.history.replaceState(null, "", `${target}/`);
-    setPathname(target);
+    window.dispatchEvent(new Event(NAVIGATION_EVENT));
   }, [detailOrigins, pathname]);
 
   const value = useMemo(
@@ -205,12 +239,14 @@ export function NavProvider({children}: { children: ReactNode }) {
       openAlbum,
       openArtist,
       closeArtist: closeDetail,
+      openComposer,
+      closeComposer: closeDetail,
       openWork,
       closeAlbum: closeDetail,
       closeWork: closeDetail,
       backLabel,
     }),
-    [state, pathname, setView, openAlbum, openArtist, openWork, closeDetail, backLabel],
+    [state, pathname, setView, openAlbum, openArtist, openComposer, openWork, closeDetail, backLabel],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

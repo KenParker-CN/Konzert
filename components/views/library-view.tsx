@@ -4,6 +4,7 @@ import {useMemo, useRef, useState} from "react";
 import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlayerPlay, IconSearch, IconArrowsShuffle, IconX,} from "@tabler/icons-react";
 import {AlbumDetail} from "@/components/album-detail";
 import {ArtistDetail} from "@/components/artist-detail";
+import {ComposerDetail} from "@/components/composer-detail";
 import {WorkDetail} from "@/components/work-detail";
 import {AlbumGrid} from "@/components/album-grid";
 import {CoverArt} from "@/components/cover-art";
@@ -20,6 +21,7 @@ import {
     type ArtistSummary,
     groupAlbums,
     groupArtists,
+    groupComposers,
     searchTracks,
     sortAlbums,
     sortArtists,
@@ -40,7 +42,7 @@ const SONGS_PAGE_SIZE = 20;
 export function LibraryView() {
     const {tracks, albums, importFolder, scanning, storageMode, removeTracks} =
         useLibrary();
-    const {view, albumKey, artistName, work, openAlbum: navigateToAlbum} = useNav();
+    const {view, albumKey, artistName, composerName, work, openAlbum: navigateToAlbum} = useNav();
     const player = usePlayer();
 
     const [query, setQuery] = useState("");
@@ -85,6 +87,10 @@ export function LibraryView() {
         () => sortArtists(groupArtists(matched), artistSort, artistSortDir),
         [matched, artistSort, artistSortDir],
     );
+    const composerGroups = useMemo(
+        () => sortArtists(groupComposers(matched), artistSort, artistSortDir),
+        [matched, artistSort, artistSortDir],
+    );
 
     const pageCount = Math.max(
         1,
@@ -112,6 +118,9 @@ export function LibraryView() {
     }
     if (artistName) {
         return <ArtistDetail artistName={artistName}/>;
+    }
+    if (composerName) {
+        return <ComposerDetail composerName={composerName}/>;
     }
 
     if (tracks.length === 0) {
@@ -185,7 +194,7 @@ export function LibraryView() {
             <header className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <h1 className="text-lg font-semibold text-zinc-900">
-                        {view === "albums" ? "专辑" : view === "artists" ? "艺术家" : "歌曲"}
+                        {view === "albums" ? "专辑" : view === "artists" ? "艺术家" : view === "composers" ? "作曲家" : "歌曲"}
                     </h1>
                     <div className="flex items-center gap-2">
                         <div className="relative">
@@ -194,7 +203,7 @@ export function LibraryView() {
                             <input
                                 value={query}
                                 onChange={(event) => updateQuery(event.target.value)}
-                                placeholder="搜索标题、艺术家、专辑…"
+                                placeholder="搜索标题、艺术家、作曲家、专辑…"
                                 className="w-56 rounded-full border border-zinc-200 bg-zinc-950/5 py-1.5 pr-8 pl-8 text-xs text-zinc-700 focus:outline-none"
                             />
                             {query ? (
@@ -237,6 +246,8 @@ export function LibraryView() {
                     <span>{visibleAlbums.length} 张专辑</span>
                     <span className="text-zinc-300">·</span>
                     <span>{artistGroups.length} 位艺术家</span>
+                    <span className="text-zinc-300">·</span>
+                    <span>{composerGroups.length} 位作曲家</span>
                     {query ? (
                         <span className="text-blue-600">已按「{query}」筛选</span>
                     ) : null}
@@ -269,7 +280,7 @@ export function LibraryView() {
                             }
                         />
                     ) : null}
-                    {view === "artists" ? (
+                    {view === "artists" || view === "composers" ? (
                         <SortControl
                             value={artistSort}
                             labels={ARTIST_SORT_LABELS}
@@ -320,9 +331,11 @@ export function LibraryView() {
             ) : null}
 
             {view === "artists" ? (
-                <ArtistGrid
-                    artists={artistGroups}
-                />
+                <ArtistGrid artists={artistGroups} />
+            ) : null}
+
+            {view === "composers" ? (
+                <ComposerGrid composers={composerGroups} />
             ) : null}
         </div>
     );
@@ -412,6 +425,50 @@ function SongsPagination({
                 下一页
                 <IconChevronRight className="h-3.5 w-3.5"/>
             </button>
+        </div>
+    );
+}
+
+interface ComposerGridProps {
+    composers: ArtistSummary[];
+}
+
+function ComposerGrid({composers}: ComposerGridProps) {
+    const {openComposer} = useNav();
+
+    if (composers.length === 0) {
+        return (
+            <p className="px-4 py-12 text-center text-sm text-zinc-500">
+                没有匹配的作曲家
+            </p>
+        );
+    }
+
+    return (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+            {composers.map((composer) => (
+                <button
+                    key={composer.name}
+                    type="button"
+                    onClick={() => openComposer(composer.name)}
+                    className="group flex min-w-0 flex-col items-center gap-2 text-center"
+                >
+                    <Avatar
+                        size="lg"
+                        className="size-24 border border-zinc-200 bg-zinc-100 text-2xl text-zinc-500 shadow-lg shadow-zinc-900/15 transition duration-200 group-hover:scale-105 group-hover:bg-zinc-200 sm:size-28"
+                    >
+                        <AvatarFallback>
+                            {composer.name.trim().charAt(0).toUpperCase() || "?"}
+                        </AvatarFallback>
+                    </Avatar>
+                    <span className="w-full truncate text-sm text-zinc-800">
+                        {composer.name}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                        {composer.tracks.length} 首 · {formatDuration(composer.duration)}
+                    </span>
+                </button>
+            ))}
         </div>
     );
 }
