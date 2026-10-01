@@ -203,6 +203,8 @@ export async function reparseTrackMetadata(
         title: metadata.title,
         artist: metadata.artist,
         albumArtist: metadata.albumArtist,
+        composer: metadata.composer,
+        isrc: metadata.isrc,
         album: metadata.album,
         genre: metadata.genre,
         releaseDate: metadata.releaseDate,

@@ -13,6 +13,7 @@ export interface ParsedAudio {
     artist: string;
     albumArtist: string;
     composer: string;
+    isrc: string;
     album: string;
     genre: string;
     releaseDate: ReleaseInfo;
@@ -82,6 +83,7 @@ export async function parseAudioFile(
         cleanText(common.albumartist) ||
         artist;
     const composer = joinArtists(common.composer);
+    const isrc = cleanText(common.isrc?.[0]);
     const album = cleanText(common.album) || UNKNOWN_ALBUM;
     const genre = common.genre?.length ? cleanText(common.genre[0]) : "";
     const releaseDate = parseReleaseDate(common);
@@ -100,6 +102,7 @@ export async function parseAudioFile(
         artist,
         albumArtist,
         composer,
+        isrc,
         album,
         genre,
         releaseDate,

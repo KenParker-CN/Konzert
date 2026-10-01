@@ -379,7 +379,7 @@ export function searchTracks(tracks: Track[], query: string): Track[] {
     const needle = query.trim().toLowerCase();
     if (!needle) return tracks;
     return tracks.filter((track) =>
-        [track.title, track.artist, track.composer, track.album, track.genre, track.fileName].some(
+        [track.title, track.artist, track.composer, track.isrc ?? "", track.album, track.genre, track.fileName].some(
             (field) => field.toLowerCase().includes(needle),
         ),
     );

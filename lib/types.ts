@@ -45,6 +45,8 @@ export interface Track {
   albumArtist: string;
   /** 作曲家；标签缺失时为空串（旧版入库记录亦为空串）。 */
   composer: string;
+  /** International Standard Recording Code; undefined indicates a legacy record not yet reparsed. */
+  isrc?: string;
   album: string;
   genre: string;
   releaseDate: ReleaseInfo;

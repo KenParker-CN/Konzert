@@ -8,6 +8,7 @@ import {
   groupComposers,
   groupTracksByDisc,
   groupWorks,
+  searchTracks,
   workKeyOf,
   workTitleOf,
 } from "./catalog";
@@ -108,6 +109,11 @@ function track(title: string, composer: string, id: string) {
     copyright: null,
   };
 }
+
+test("searches tracks by ISRC", () => {
+  const trackWithIsrc = {...track("Concerto", "Composer", "1"), isrc: "USRC17607839"};
+  assert.deepEqual(searchTracks([trackWithIsrc], "usrc17607839"), [trackWithIsrc]);
+});
 
 test("splits multi-value composer tags into individual composer groups", () => {
   const tracks = [

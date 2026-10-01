@@ -37,6 +37,7 @@ function makeParsedAudio(overrides: Partial<ParsedAudio> = {}): ParsedAudio {
     artist: "Test Artist",
     albumArtist: "Test Artist",
     composer: "",
+    isrc: "",
     album: "Test Album",
     genre: "",
     releaseDate: releaseInfo,
@@ -81,6 +82,7 @@ function makeTrack(
     artist: "Old Artist",
     albumArtist: "Old Artist",
     composer: "",
+    isrc: "",
     album: "Old Album",
     genre: "",
     releaseDate: releaseInfo,
@@ -308,6 +310,19 @@ test("buildOutcome: new file is classified as added", () => {
   assert.equal(result.updated.length, 0);
   assert.equal(result.unchanged, 0);
   assert.equal(result.added[0].id, trackIdFor(pathSourceKey("/music/new.flac")));
+});
+
+test("buildOutcome: adds ISRC to a legacy track after reparsing", () => {
+  const filePath = "/music/legacy.flac";
+  const existing = makeTrack(filePath, {isrc: undefined});
+  const result = buildOutcome(
+    [makeParsedEntry(filePath, {parsedOverrides: {isrc: "USRC17607839"}})],
+    [existing],
+  );
+
+  assert.equal(result.updated.length, 1);
+  assert.equal(result.updated[0].isrc, "USRC17607839");
+  assert.equal(result.unchanged, 0);
 });
 
 test("buildOutcome: unchanged file (same size) is skipped", () => {

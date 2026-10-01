@@ -193,7 +193,7 @@ export function LibraryView() {
                             <input
                                 value={query}
                                 onChange={(event) => updateQuery(event.target.value)}
-                                placeholder="搜索标题、艺术家、作曲家、专辑…"
+                                placeholder="搜索标题、艺术家、作曲家、专辑或 ISRC…"
                                 className="w-56 rounded-full border border-zinc-200 bg-zinc-950/5 py-1.5 pr-8 pl-8 text-xs text-zinc-700 focus:outline-none"
                             />
                             {query ? (

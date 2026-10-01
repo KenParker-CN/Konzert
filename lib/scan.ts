@@ -401,6 +401,7 @@ export function buildOutcome(
       (candidate.fileModifiedAt == null ||
         existing.fileModifiedAt === candidate.fileModifiedAt) &&
       existing.duration > 0 &&
+      existing.isrc !== undefined &&
       !needsBitDepthRefresh &&
       !needsCopyrightRefresh
     ) {
@@ -414,6 +415,7 @@ export function buildOutcome(
       artist: metadata.artist,
       albumArtist: metadata.albumArtist,
       composer: metadata.composer,
+      isrc: metadata.isrc,
       album: metadata.album,
       genre: metadata.genre,
       releaseDate: metadata.releaseDate,
@@ -686,7 +688,8 @@ export async function scanDirectoryDifferential(
       existing.fileSize === candidate.fileSize &&
       (candidate.fileModifiedAt == null ||
         existing.fileModifiedAt === candidate.fileModifiedAt) &&
-      existing.duration > 0
+      existing.duration > 0 &&
+      existing.isrc !== undefined
     ) {
       if (
         source.kind === "handle" &&
