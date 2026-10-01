@@ -2,6 +2,7 @@ import { IconArrowLeft, IconArrowsShuffle, IconPlayerPlay } from "@tabler/icons-
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
 import { AlbumGrid } from "@/components/album-grid";
+import { ComposerWorks } from "@/components/composer-works";
 import { TrackList } from "@/components/track-list";
 import { composerNamesOf, groupAlbums } from "@/lib/catalog";
 import { compareNames } from "@/lib/collation";
@@ -123,9 +124,7 @@ export function ComposerDetail({composerName}: {composerName: string}) {
 
       <section className="flex min-w-0 flex-col gap-3">
         <h2 className="text-base font-medium text-zinc-800">Works</h2>
-        <p className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-500">
-          作品数据尚未导入
-        </p>
+        <ComposerWorks composerName={composerName} />
       </section>
     </div>
   );
