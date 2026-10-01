@@ -53,7 +53,7 @@ export function TrackList({
 }: TrackListProps) {
   const player = usePlayer();
   const { favorites, toggleFavorite, settings, removeTracks } = useLibrary();
-  const { openAlbum, openArtist } = useNav();
+  const { openAlbum, openArtist, openRecording } = useNav();
   const queue = queueTracks ?? tracks;
   const titleFor = titleOf ?? ((track: Track) => track.title);
   const artistFor = trackArtist ?? ((track: Track) => track.artist);
@@ -192,6 +192,7 @@ export function TrackList({
                   <CatalogTitle
                     title={titleFor(track)}
                     composer={track.composer}
+                    onOpenRecording={() => openRecording(track)}
                   />
                 </div>
                 {artist ? (
@@ -277,6 +278,9 @@ export function TrackList({
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
+              <ContextMenuItem onClick={() => openRecording(track)}>
+                查看录音详情
+              </ContextMenuItem>
               <ContextMenuItem onClick={() => player.playTrack(track, queue)}>
                 <IconPlayerPlay />
                 播放

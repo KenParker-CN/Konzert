@@ -18,6 +18,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CatalogReference } from "./catalog";
+import type { Track } from "./types";
 
 export type ViewName =
   | "library"
@@ -35,6 +36,7 @@ interface NavContextValue {
   albumKey: string | null;
   artistName: string | null;
   composerName: string | null;
+  recordingKey: string | null;
   work: CatalogReference & { composer: string } | null;
   setView: (view: ViewName) => void;
   openAlbum: (albumKey: string) => void;
@@ -42,6 +44,8 @@ interface NavContextValue {
   closeArtist: () => void;
   openComposer: (composerName: string) => void;
   closeComposer: () => void;
+  openRecording: (track: Track) => void;
+  closeRecording: () => void;
   openWork: (work: CatalogReference & { composer: string }) => void;
   closeWork: () => void;
   closeAlbum: () => void;
@@ -85,7 +89,7 @@ function fallbackPathForDetail(pathname: string): string {
   const resource = pathname.split("/").filter(Boolean)[0];
   if (resource === "artists") return "/artists";
   if (resource === "composers") return "/composers";
-  if (resource === "tracks") return "/songs";
+  if (resource === "tracks" || resource === "recordings") return "/songs";
   return "/albums";
 }
 
@@ -119,6 +123,7 @@ function routeState(pathname: string): {
   albumKey: string | null;
   artistName: string | null;
   composerName: string | null;
+  recordingKey: string | null;
   work: CatalogReference & { composer: string } | null;
 } {
   const segments = pathname.split("/").filter(Boolean);
@@ -126,28 +131,31 @@ function routeState(pathname: string): {
   const id = segments.length === 2 ? decodeSegment(segments[1]) : null;
 
   if (resource === "library") {
-    return {view: "library", albumKey: null, artistName: null, composerName: null, work: null};
+    return {view: "library", albumKey: null, artistName: null, composerName: null, recordingKey: null, work: null};
   }
   if (resource === "settings") {
-    return {view: "settings", albumKey: null, artistName: null, composerName: null, work: null};
+    return {view: "settings", albumKey: null, artistName: null, composerName: null, recordingKey: null, work: null};
   }
   if (resource === "favorites") {
-    return {view: "favorites", albumKey: null, artistName: null, composerName: null, work: null};
+    return {view: "favorites", albumKey: null, artistName: null, composerName: null, recordingKey: null, work: null};
   }
   if (resource === "history") {
-    return {view: "history", albumKey: null, artistName: null, composerName: null, work: null};
+    return {view: "history", albumKey: null, artistName: null, composerName: null, recordingKey: null, work: null};
   }
   if (resource === "albums") {
-    return {view: "albums", albumKey: id, artistName: null, composerName: null, work: null};
+    return {view: "albums", albumKey: id, artistName: null, composerName: null, recordingKey: null, work: null};
   }
   if (resource === "artists") {
-    return {view: "artists", albumKey: null, artistName: id, composerName: null, work: null};
+    return {view: "artists", albumKey: null, artistName: id, composerName: null, recordingKey: null, work: null};
   }
   if (resource === "composers") {
-    return {view: "composers", albumKey: null, artistName: null, composerName: id, work: null};
+    return {view: "composers", albumKey: null, artistName: null, composerName: id, recordingKey: null, work: null};
   }
   if (resource === "songs") {
-    return {view: "songs", albumKey: null, artistName: null, composerName: null, work: null};
+    return {view: "songs", albumKey: null, artistName: null, composerName: null, recordingKey: null, work: null};
+  }
+  if (resource === "recordings" && id) {
+    return {view: "songs", albumKey: null, artistName: null, composerName: null, recordingKey: id, work: null};
   }
   if (resource === "tracks" && id) {
     const [system, number, composer] = id.split("|");
@@ -157,6 +165,7 @@ function routeState(pathname: string): {
         albumKey: null,
         artistName: null,
         composerName: null,
+        recordingKey: null,
         work: {
           system,
           number,
@@ -168,7 +177,7 @@ function routeState(pathname: string): {
     }
   }
 
-  return {view: "library", albumKey: null, artistName: null, composerName: null, work: null};
+  return {view: "library", albumKey: null, artistName: null, composerName: null, recordingKey: null, work: null};
 }
 
 export function NavProvider({children}: { children: ReactNode }) {
@@ -223,6 +232,14 @@ export function NavProvider({children}: { children: ReactNode }) {
     push(path);
   }, [pathname, push]);
 
+  const openRecording = useCallback((track: Track) => {
+    const isrc = track.isrc?.trim();
+    const key = isrc ? `isrc:${isrc}` : `track:${track.id}`;
+    const path = `/recordings/${encodeURIComponent(key)}`;
+    setDetailOrigins((current) => new Map(current).set(path, pathname));
+    push(path);
+  }, [pathname, push]);
+
   const openWork = useCallback((work: CatalogReference & { composer: string }) => {
     const resourceId = [work.system, work.number, work.composer].join("|");
     const path = `/tracks/${encodeURIComponent(resourceId)}`;
@@ -246,12 +263,14 @@ export function NavProvider({children}: { children: ReactNode }) {
       closeArtist: closeDetail,
       openComposer,
       closeComposer: closeDetail,
+      openRecording,
+      closeRecording: closeDetail,
       openWork,
       closeAlbum: closeDetail,
       closeWork: closeDetail,
       backLabel,
     }),
-    [state, pathname, setView, openAlbum, openArtist, openComposer, openWork, closeDetail, backLabel],
+    [state, pathname, setView, openAlbum, openArtist, openComposer, openRecording, openWork, closeDetail, backLabel],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

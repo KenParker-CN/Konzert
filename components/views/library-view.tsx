@@ -5,6 +5,7 @@ import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlaye
 import {AlbumDetail} from "@/components/album-detail";
 import {ArtistDetail} from "@/components/artist-detail";
 import {ComposerDetail} from "@/components/composer-detail";
+import {RecordingDetail} from "@/components/recording-detail";
 import {WorkDetail} from "@/components/work-detail";
 import {AlbumGrid} from "@/components/album-grid";
 import {CoverArt} from "@/components/cover-art";
@@ -42,7 +43,7 @@ const SONGS_PAGE_SIZE = 20;
 export function LibraryView() {
     const {tracks, albums, importFolder, scanning, storageMode, removeTracks} =
         useLibrary();
-    const {view, albumKey, artistName, composerName, work, openAlbum: navigateToAlbum} = useNav();
+    const {view, albumKey, artistName, composerName, recordingKey, work, openAlbum: navigateToAlbum} = useNav();
     const player = usePlayer();
 
     const [query, setQuery] = useState("");
@@ -121,6 +122,9 @@ export function LibraryView() {
     }
     if (composerName) {
         return <ComposerDetail composerName={composerName}/>;
+    }
+    if (recordingKey) {
+        return <RecordingDetail recordingKey={recordingKey}/>;
     }
 
     const updateQuery = (value: string) => {

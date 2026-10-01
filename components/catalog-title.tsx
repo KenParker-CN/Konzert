@@ -7,19 +7,48 @@ import { useNav } from "@/lib/nav-provider";
 export function CatalogTitle({
   title,
   composer,
+  onOpenRecording,
 }: {
   title: string;
   composer: string;
+  onOpenRecording?: () => void;
 }) {
   const { openWork } = useNav();
   const references = catalogReferencesOf(title);
-  if (references.length === 0) return <>{title}</>;
+  if (references.length === 0) {
+    return onOpenRecording ? (
+      <button
+        type="button"
+        className="text-left hover:underline hover:underline-offset-2"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenRecording();
+        }}
+      >
+        {title}
+      </button>
+    ) : <>{title}</>;
+  }
 
   const parts: ReactNode[] = [];
   let cursor = 0;
   for (const reference of references) {
     if (reference.index > cursor) {
-      parts.push(title.slice(cursor, reference.index));
+      parts.push(
+        onOpenRecording ? (
+          <button
+            key={`title-${cursor}`}
+            type="button"
+            className="hover:underline hover:underline-offset-2"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenRecording();
+            }}
+          >
+            {title.slice(cursor, reference.index)}
+          </button>
+        ) : title.slice(cursor, reference.index),
+      );
     }
     parts.push(
       <button
@@ -36,7 +65,23 @@ export function CatalogTitle({
     );
     cursor = reference.index + reference.display.length;
   }
-  if (cursor < title.length) parts.push(title.slice(cursor));
+  if (cursor < title.length) {
+    parts.push(
+      onOpenRecording ? (
+        <button
+          key={`title-${cursor}`}
+          type="button"
+          className="hover:underline hover:underline-offset-2"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenRecording();
+          }}
+        >
+          {title.slice(cursor)}
+        </button>
+      ) : title.slice(cursor),
+    );
+  }
 
   return (
     <>{parts}</>
