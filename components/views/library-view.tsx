@@ -1,11 +1,12 @@
 "use client";
 
-import {useMemo, useState} from "react";
+import {useMemo, useRef, useState} from "react";
 import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlayerPlay, IconSearch, IconArrowsShuffle, IconX,} from "@tabler/icons-react";
 import {AlbumDetail} from "@/components/album-detail";
 import {ArtistDetail} from "@/components/artist-detail";
 import {WorkDetail} from "@/components/work-detail";
 import {AlbumGrid} from "@/components/album-grid";
+import {CoverArt} from "@/components/cover-art";
 import {EmptyState} from "@/components/empty-state";
 import {TrackList} from "@/components/track-list";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
@@ -48,7 +49,7 @@ const SONGS_PAGE_SIZE = 20;
 export function LibraryView() {
     const {tracks, albums, importFolder, scanning, storageMode, removeTracks} =
         useLibrary();
-    const {albumKey, artistName, work} = useNav();
+    const {albumKey, artistName, work, openAlbum: navigateToAlbum} = useNav();
     const player = usePlayer();
 
     const [tab, setTab] = useState<Tab>("albums");
@@ -65,6 +66,7 @@ export function LibraryView() {
     const [artistSortDir, setArtistSortDir] = useState<SortDir>(
         ARTIST_SORT_DEFAULT_DIR.name,
     );
+    const recentAlbumsRef = useRef<HTMLDivElement>(null);
     const matched = useMemo(() => searchTracks(tracks, query), [tracks, query]);
     const visibleTracks = useMemo(
         () => sortTracks(matched, sort, sortDir),
@@ -73,6 +75,21 @@ export function LibraryView() {
     const visibleAlbums = useMemo(
         () => sortAlbums(groupAlbums(matched), albumSort, albumSortDir),
         [matched, albumSort, albumSortDir],
+    );
+    const recentAlbums = useMemo(
+        () =>
+            albums
+                .map((album) => ({
+                    album,
+                    addedAt: album.tracks.reduce(
+                        (latest, track) => Math.max(latest, track.addedAt),
+                        0,
+                    ),
+                }))
+                .sort((a, b) => b.addedAt - a.addedAt)
+                .slice(0, 5)
+                .map(({album}) => album),
+        [albums],
     );
     const artistGroups = useMemo(
         () => sortArtists(groupArtists(matched), artistSort, artistSortDir),
@@ -93,12 +110,12 @@ export function LibraryView() {
         [visibleTracks, safePage],
     );
 
-    const openAlbum = albumKey
+    const selectedAlbum = albumKey
         ? albums.find((album) => album.key === albumKey)
         : undefined;
 
-    if (openAlbum) {
-        return <AlbumDetail album={openAlbum}/>;
+    if (selectedAlbum) {
+        return <AlbumDetail album={selectedAlbum}/>;
     }
     if (work) {
         return <WorkDetail work={work}/>;
@@ -124,6 +141,57 @@ export function LibraryView() {
 
     return (
         <div className="flex flex-col gap-5">
+            {tab === "albums" && !query && recentAlbums.length > 0 ? (
+                <section aria-label="最近添加的专辑" className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-medium text-zinc-800">最近添加</h2>
+                        <div className="flex gap-1">
+                            <button
+                                type="button"
+                                aria-label="向左滚动最近添加的专辑"
+                                onClick={() => recentAlbumsRef.current?.scrollBy({left: -320, behavior: "smooth"})}
+                                className="rounded-full border border-zinc-200 p-1.5 text-zinc-500 transition hover:bg-zinc-950/5 hover:text-zinc-800"
+                            >
+                                <IconChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="向右滚动最近添加的专辑"
+                                onClick={() => recentAlbumsRef.current?.scrollBy({left: 320, behavior: "smooth"})}
+                                className="rounded-full border border-zinc-200 p-1.5 text-zinc-500 transition hover:bg-zinc-950/5 hover:text-zinc-800"
+                            >
+                                <IconChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        ref={recentAlbumsRef}
+                        className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
+                    >
+                        {recentAlbums.map((album) => (
+                            <button
+                                key={album.key}
+                                type="button"
+                                onClick={() => navigateToAlbum(album.key)}
+                                className="group w-40 shrink-0 text-left"
+                            >
+                                <CoverArt
+                                    coverId={album.coverId}
+                                    label={album.album}
+                                    className="aspect-square w-full rounded-xl shadow-md shadow-zinc-900/10 transition group-hover:brightness-110"
+                                    labelClassName="text-2xl"
+                                />
+                                <p className="mt-2 truncate text-sm text-zinc-800" title={album.album}>
+                                    {album.album}
+                                </p>
+                                <p className="truncate text-xs text-zinc-500" title={album.albumArtist}>
+                                    {album.albumArtist}
+                                </p>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            ) : null}
             <header className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-1 rounded-full bg-zinc-950/5 p-1">

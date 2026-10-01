@@ -51,6 +51,7 @@ export function SettingsView() {
     storageMode,
     updateSettings,
     importFolder,
+    selectMonitorFolder,
     refreshLibrary,
     clearLibrary,
     scanning,
@@ -143,8 +144,7 @@ export function SettingsView() {
             type="button"
             onClick={() => void refreshLibrary()}
             disabled={
-              scanning ||
-              (settings.watchedFolders.length === 0 && settings.browserFolders.length === 0)
+              scanning || !settings.monitorFolder
             }
             className="flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-xs text-zinc-700 transition hover:bg-zinc-950/5 disabled:opacity-40"
           >
@@ -341,33 +341,38 @@ export function SettingsView() {
               <option value="en-US">English</option>
             </select>
           </label>
-          <label className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">自动检查已导入文件夹</span>
-            <input
-              type="checkbox"
-              checked={settings.autoWatch}
-              onChange={(event) => updateSettings({ autoWatch: event.target.checked })}
-              className="size-4 accent-blue-600"
-            />
-          </label>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500">监控文件夹</span>
+            <button
+              type="button"
+              onClick={() => void selectMonitorFolder()}
+              disabled={scanning}
+              className="flex items-center gap-2 rounded-full border border-zinc-300 px-3 py-1.5 text-xs text-zinc-700 transition hover:bg-zinc-950/5 disabled:opacity-40"
+            >
+              <IconFolderPlus className="h-3.5 w-3.5" />
+              选择文件夹
+            </button>
+          </div>
           <div>
-            <p className="text-zinc-500">已导入文件夹</p>
-            {settings.watchedFolders.length + settings.browserFolders.length > 0 ? (
+            <p className="text-zinc-500">当前监控文件夹</p>
+            {settings.monitorFolder ? (
               <ul className="mt-2 flex flex-col gap-1 text-[11px] text-zinc-500">
-                {settings.watchedFolders.map((folder) => (
-                  <li key={folder} className="truncate" title={folder}>
-                    {folder}
-                  </li>
-                ))}
-                {settings.browserFolders.map((folder) => (
-                  <li key={folder.id} className="truncate" title={folder.name}>
-                    {folder.name}（浏览器授权）
-                  </li>
-                ))}
+                <li
+                  className="truncate"
+                  title={
+                    settings.monitorFolder.kind === "path"
+                      ? settings.monitorFolder.path
+                      : settings.monitorFolder.name
+                  }
+                >
+                  {settings.monitorFolder.kind === "path"
+                    ? settings.monitorFolder.path
+                    : `${settings.monitorFolder.name}（浏览器授权）`}
+                </li>
               </ul>
             ) : (
               <p className="mt-2 text-[11px] text-zinc-400">
-                扫描文件夹后会加入列表；浏览器会在应用重新可见时检查变化。
+                尚未选择。选中后会导入现有曲目，并只监控这个文件夹。
               </p>
             )}
           </div>
@@ -394,7 +399,7 @@ export function SettingsView() {
         )}
         <p className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-500">
           <IconRefresh className="h-3 w-3" />
-          刷新会比较文件大小和修改时间，只重新读取变化的音频标签；浏览器在应用重新可见时自动检查，已听次数与收藏会保留。
+          只监控上方明确选择的文件夹，普通导入不会自动加入监控。刷新按文件大小和修改时间识别变化；浏览器会在应用重新可见时检查，桌面端由文件系统监听更新。
         </p>
       </section>
 

@@ -102,15 +102,17 @@ export interface PlayHistoryEntry {
   at: number;
 }
 
+export type MonitoredFolder =
+  | { kind: "path"; path: string }
+  | { kind: "handle"; id: string; name: string; handle: FileSystemDirectoryHandle };
+
 export interface LibrarySettings {
   volume: number;
   muted: boolean;
   shuffle: boolean;
   repeat: RepeatMode;
   language: "zh-CN" | "en-US";
-  autoWatch: boolean;
-  watchedFolders: string[];
-  browserFolders: { id: string; name: string; handle: FileSystemDirectoryHandle }[];
+  monitorFolder: MonitoredFolder | null;
   /** 上次播放的曲目，便于下次启动还原。 */
   lastTrackId: string | null;
 }
@@ -135,9 +137,7 @@ export const DEFAULT_SETTINGS: LibrarySettings = {
   shuffle: false,
   repeat: "off",
   language: "zh-CN",
-  autoWatch: true,
-  watchedFolders: [],
-  browserFolders: [],
+  monitorFolder: null,
   lastTrackId: null,
 };
 

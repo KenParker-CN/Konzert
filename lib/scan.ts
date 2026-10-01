@@ -281,6 +281,7 @@ export interface ScanOutcome {
    * 调用方负责从 IndexedDB 与状态中删除这些记录。
    */
   removed?: Track[];
+  relinked?: Track[];
 }
 
 export interface ScanOptions {
@@ -671,6 +672,7 @@ export async function scanDirectoryDifferential(
 
   // 划分需要解析与跳过不解析的候选文件
   const toParse: ScanCandidate[] = [];
+  const relinked: Track[] = [];
   let unchanged = 0;
 
   for (const candidate of collected.candidates) {
@@ -686,6 +688,14 @@ export async function scanDirectoryDifferential(
         existing.fileModifiedAt === candidate.fileModifiedAt) &&
       existing.duration > 0
     ) {
+      if (
+        source.kind === "handle" &&
+        source.sourceId &&
+        existing.origin.kind === "handle" &&
+        existing.origin.sourceId !== source.sourceId
+      ) {
+        relinked.push({ ...existing, origin: candidate.origin });
+      }
       unchanged += 1;
     } else {
       toParse.push(candidate);
@@ -769,6 +779,7 @@ export async function scanDirectoryDifferential(
     added,
     updated,
     removed,
+    relinked,
     unchanged,
     failures: [...collected.failures, ...parseFailures],
     covers,
