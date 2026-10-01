@@ -17,7 +17,7 @@ export function WorkDetail({
   work: CatalogReference & { composer: string };
 }) {
   const { tracks, removeTracks } = useLibrary();
-  const { closeWork } = useNav();
+  const { closeWork, backLabel } = useNav();
   const player = usePlayer();
   const recordings = tracks.filter((track) => {
     const references = catalogReferencesOf(track.title);
@@ -45,7 +45,7 @@ export function WorkDetail({
         className="flex w-fit items-center gap-2 text-xs leading-4 text-zinc-500 transition hover:text-zinc-800"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
-        返回曲库
+        {backLabel}
       </button>
       <header className="flex items-end justify-between gap-4">
         <div>

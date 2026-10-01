@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type ReactNode,
+} from "react";
 import { IconAlertCircle, IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { PlayerBar } from "@/components/player-bar";
 import { QueuePanel } from "@/components/queue-panel";
@@ -24,7 +30,7 @@ const PHASE_LABELS: Record<ScanPhase, string> = {
 };
 
 export function AppShell({ children }: { children?: ReactNode }) {
-  const { view, albumKey, artistName, work } = useNav();
+  const { pathname, view } = useNav();
   const {
     ready,
     progress,
@@ -38,10 +44,17 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const [queueOpen, setQueueOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const scrollPositionsRef = useRef(new Map<string, number>());
 
-  useEffect(() => {
-    contentRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [view, albumKey, artistName, work]);
+  useLayoutEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    container.scrollTo({
+      top: scrollPositionsRef.current.get(pathname) ?? 0,
+      behavior: "auto",
+    });
+  }, [pathname]);
 
   const handleDragOver = (event: DragEvent<HTMLElement>) => {
     if (!event.dataTransfer.types.includes("Files")) return;
@@ -107,6 +120,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
           <div
             ref={contentRef}
+            onScroll={(event) => {
+              scrollPositionsRef.current.set(pathname, event.currentTarget.scrollTop);
+            }}
             className="min-h-0 flex-1 overflow-y-auto px-6 py-6"
           >
             {children ?? (!ready ? (

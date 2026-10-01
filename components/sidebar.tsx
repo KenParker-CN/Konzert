@@ -43,7 +43,7 @@ const getSidebarState = () =>
 const getServerSidebarState = () => false;
 
 export function Sidebar() {
-  const { view, setView, albumKey, closeAlbum } = useNav();
+  const { view, setView, albumKey } = useNav();
   const {
     tracks,
     albums,
@@ -118,10 +118,7 @@ export function Sidebar() {
               key={item.id}
               type="button"
               title={item.label}
-              onClick={() => {
-                closeAlbum();
-                setView(item.id);
-              }}
+              onClick={() => setView(item.id)}
               className={`flex items-center rounded-lg py-2 text-sm transition ${
                 collapsed ? "justify-center px-0" : "gap-3 px-3"
               } ${

@@ -14,7 +14,7 @@ import { artistFavoriteKey, type Track } from "@/lib/types";
 
 export function ArtistDetail({ artistName }: { artistName: string }) {
   const { tracks, favorites, removeTracks, toggleFavorite } = useLibrary();
-  const { closeArtist } = useNav();
+  const { closeArtist, backLabel } = useNav();
   const player = usePlayer();
   const artistTracks = tracks.filter((track) =>
     artistNamesOf(track).some(
@@ -73,7 +73,7 @@ export function ArtistDetail({ artistName }: { artistName: string }) {
         className="flex w-fit items-center gap-2 text-xs leading-4 text-zinc-500 transition hover:text-zinc-800"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
-        返回曲库
+        {backLabel}
       </button>
 
       <header className="flex flex-col gap-3">

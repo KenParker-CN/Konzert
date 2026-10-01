@@ -21,6 +21,7 @@ import type { CatalogReference } from "./catalog";
 export type ViewName = "library" | "favorites" | "history" | "settings";
 
 interface NavContextValue {
+  pathname: string;
   view: ViewName;
   albumKey: string | null;
   artistName: string | null;
@@ -32,6 +33,7 @@ interface NavContextValue {
   openWork: (work: CatalogReference & { composer: string }) => void;
   closeWork: () => void;
   closeAlbum: () => void;
+  backLabel: string;
 }
 
 const NavContext = createContext<NavContextValue | null>(null);
@@ -42,6 +44,21 @@ function decodeSegment(segment: string): string | null {
   } catch {
     return null;
   }
+}
+
+function normalizePathname(pathname: string): string {
+  const normalized = pathname.replace(/\/+$/, "");
+  return normalized || "/library";
+}
+
+function backLabelForPath(pathname: string): string {
+  const resource = pathname.split("/").filter(Boolean)[0];
+  if (resource === "favorites") return "返回我的收藏";
+  if (resource === "history") return "返回播放历史";
+  if (resource === "albums") return "返回专辑详情";
+  if (resource === "artists") return "返回艺术家详情";
+  if (resource === "tracks") return "返回作品详情";
+  return "返回曲库";
 }
 
 function routeState(pathname: string): {
@@ -92,9 +109,18 @@ function routeState(pathname: string): {
 
 export function NavProvider({children}: { children: ReactNode }) {
   const [pathname, setPathname] = useState(() =>
-    typeof window === "undefined" ? "/library" : window.location.pathname || "/library",
+    typeof window === "undefined"
+      ? "/library"
+      : normalizePathname(window.location.pathname),
+  );
+  const [detailOrigins, setDetailOrigins] = useState<Map<string, string>>(
+    () => new Map(),
   );
   const state = useMemo(() => routeState(pathname), [pathname]);
+  const backLabel = useMemo(
+    () => backLabelForPath(detailOrigins.get(pathname) ?? "/library"),
+    [detailOrigins, pathname],
+  );
 
   useEffect(() => {
     const initialPath = window.location.pathname || "/library";
@@ -103,7 +129,7 @@ export function NavProvider({children}: { children: ReactNode }) {
     }
 
     const handlePopState = () => {
-      setPathname(window.location.pathname || "/library");
+      setPathname(normalizePathname(window.location.pathname));
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -120,40 +146,44 @@ export function NavProvider({children}: { children: ReactNode }) {
   }, [push]);
 
   const openAlbum = useCallback((albumKey: string) => {
-    push(`/albums/${encodeURIComponent(albumKey)}`);
-  }, [push]);
+    const path = `/albums/${encodeURIComponent(albumKey)}`;
+    setDetailOrigins((current) => new Map(current).set(path, pathname));
+    push(path);
+  }, [pathname, push]);
 
   const openArtist = useCallback((artistName: string) => {
-    push(`/artists/${encodeURIComponent(artistName)}`);
-  }, [push]);
+    const path = `/artists/${encodeURIComponent(artistName)}`;
+    setDetailOrigins((current) => new Map(current).set(path, pathname));
+    push(path);
+  }, [pathname, push]);
 
   const openWork = useCallback((work: CatalogReference & { composer: string }) => {
-    const resourceId = [work.system, work.number, work.composer]
-      .join("|");
-    push(`/tracks/${encodeURIComponent(resourceId)}`);
-  }, [push]);
+    const resourceId = [work.system, work.number, work.composer].join("|");
+    const path = `/tracks/${encodeURIComponent(resourceId)}`;
+    setDetailOrigins((current) => new Map(current).set(path, pathname));
+    push(path);
+  }, [pathname, push]);
 
-  const goBack = useCallback((fallback = "/library") => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.history.replaceState(null, "", `${fallback}/`);
-      setPathname(fallback);
-    }
-  }, []);
+  const closeDetail = useCallback(() => {
+    const target = detailOrigins.get(pathname) ?? "/library";
+    window.history.replaceState(null, "", `${target}/`);
+    setPathname(target);
+  }, [detailOrigins, pathname]);
 
   const value = useMemo(
     () => ({
       ...state,
+      pathname,
       setView,
       openAlbum,
       openArtist,
-      closeArtist: goBack,
+      closeArtist: closeDetail,
       openWork,
-      closeAlbum: goBack,
-      closeWork: goBack,
+      closeAlbum: closeDetail,
+      closeWork: closeDetail,
+      backLabel,
     }),
-    [state, setView, openAlbum, openArtist, goBack, openWork],
+    [state, pathname, setView, openAlbum, openArtist, openWork, closeDetail, backLabel],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

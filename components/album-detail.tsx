@@ -74,7 +74,7 @@ function dominantColorOf(imageUrl: string): Promise<string | null> {
 }
 
 export function AlbumDetail({album}: { album: AlbumSummary }) {
-    const {closeAlbum, openArtist} = useNav();
+    const {closeAlbum, openArtist, backLabel} = useNav();
     const player = usePlayer();
     const {favorites, removeTracks, toggleFavorite} = useLibrary();
     const [isCoverOpen, setIsCoverOpen] = useState(false);
@@ -212,7 +212,7 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                 className="flex w-fit items-center gap-2 text-xs leading-4 text-zinc-500 transition hover:text-zinc-800"
             >
                 <IconArrowLeft className="h-3.5 w-3.5"/>
-                返回专辑列表
+                {backLabel}
             </button>
 
             <div
