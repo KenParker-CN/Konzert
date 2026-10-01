@@ -399,7 +399,7 @@ export function groupTracksByDisc(tracks: Track[]): DiscSection[] {
  */
 const CATALOG_NUMBER_PATTERNS = [
     /*Telemann's*/
-    {system: "TWV", pattern: /\bTWV\s+\d+:[A-Z]?\d+/i},
+    {system: "TWV", pattern: /\bTWV\s+(?:Anh\.\s+)?\d+:[A-Z]*\d+/i},
     /*Bach's*/
     {system: "BWV", pattern: /\bBWV\s+\d+[A-Z]?/i},
     /*Vivaldi's*/
