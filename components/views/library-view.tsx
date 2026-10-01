@@ -1,7 +1,7 @@
 "use client";
 
 import {useMemo, useRef, useState} from "react";
-import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlayerPlay, IconSearch, IconArrowsShuffle, IconX,} from "@tabler/icons-react";
+import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlayerPlay, IconSearch, IconArrowsShuffle, IconPiano, IconX,} from "@tabler/icons-react";
 import {AlbumDetail} from "@/components/album-detail";
 import {ArtistDetail} from "@/components/artist-detail";
 import {ComposerDetail} from "@/components/composer-detail";
@@ -445,26 +445,21 @@ function ComposerGrid({composers}: ComposerGridProps) {
     }
 
     return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-            {composers.map((composer) => (
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            {composers.map((composer, index) => (
                 <button
                     key={composer.name}
                     type="button"
                     onClick={() => openComposer(composer.name)}
-                    className="group flex min-w-0 flex-col items-center gap-2 text-center"
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-950/[0.03] ${
+                        index > 0 ? "border-t border-zinc-100" : ""
+                    }`}
                 >
-                    <Avatar
-                        size="lg"
-                        className="size-24 border border-zinc-200 bg-zinc-100 text-2xl text-zinc-500 shadow-lg shadow-zinc-900/15 transition duration-200 group-hover:scale-105 group-hover:bg-zinc-200 sm:size-28"
-                    >
-                        <AvatarFallback>
-                            {composer.name.trim().charAt(0).toUpperCase() || "?"}
-                        </AvatarFallback>
-                    </Avatar>
-                    <span className="w-full truncate text-sm text-zinc-800">
+                    <IconPiano className="h-4 w-4 shrink-0 text-zinc-400" />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-800">
                         {composer.name}
                     </span>
-                    <span className="text-xs text-zinc-500">
+                    <span className="shrink-0 text-xs text-zinc-500">
                         {composer.tracks.length} 首 · {formatDuration(composer.duration)}
                     </span>
                 </button>
