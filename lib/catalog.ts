@@ -92,6 +92,13 @@ export function artistNamesOf(track: Track): string[] {
     return names.length > 0 ? names : [UNKNOWN_ARTIST];
 }
 
+export function composerNamesOf(track: Track): string[] {
+    return track.composer
+        .split(/;|、|\s+\/\s+/)
+        .map(normalize)
+        .filter(Boolean);
+}
+
 export function albumKeyOf(track: Track): string {
     return `${normalize(track.albumArtist).toLowerCase()}||${normalize(
         track.album,
@@ -285,15 +292,15 @@ export function groupArtists(tracks: Track[]): ArtistSummary[] {
 export function groupComposers(tracks: Track[]): ArtistSummary[] {
     const groups = new Map<string, ArtistSummary>();
     for (const track of tracks) {
-        const name = track.composer.trim();
-        if (!name) continue;
-        const key = name.toLocaleLowerCase();
-        const group = groups.get(key);
-        if (group) {
-            group.tracks.push(track);
-            group.duration += track.duration || 0;
-        } else {
-            groups.set(key, {name, tracks: [track], duration: track.duration || 0});
+        for (const name of composerNamesOf(track)) {
+            const key = name.toLocaleLowerCase();
+            const group = groups.get(key);
+            if (group) {
+                group.tracks.push(track);
+                group.duration += track.duration || 0;
+            } else {
+                groups.set(key, {name, tracks: [track], duration: track.duration || 0});
+            }
         }
     }
     return [...groups.values()].sort((a, b) => compareText(a.name, b.name));

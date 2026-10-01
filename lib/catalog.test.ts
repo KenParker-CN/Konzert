@@ -4,6 +4,8 @@ import {
   catalogNumberOf,
   catalogReferenceOf,
   catalogReferencesOf,
+  composerNamesOf,
+  groupComposers,
   groupTracksByDisc,
   groupWorks,
   workKeyOf,
@@ -106,6 +108,30 @@ function track(title: string, composer: string, id: string) {
     copyright: null,
   };
 }
+
+test("splits multi-value composer tags into individual composer groups", () => {
+  const tracks = [
+    track("Concerto", "Johann Sebastian Bach; Wolfgang Amadeus Mozart", "1"),
+    track("Sonata", "Bach, Johann Sebastian", "2"),
+  ];
+  const composers = groupComposers(tracks);
+
+  assert.deepEqual(composerNamesOf(tracks[0]), [
+    "Johann Sebastian Bach",
+    "Wolfgang Amadeus Mozart",
+  ]);
+  assert.deepEqual(
+    composers.map(({name, tracks: composerTracks}) => ({
+      name,
+      ids: composerTracks.map(({id}) => id),
+    })),
+    [
+      {name: "Bach, Johann Sebastian", ids: ["2"]},
+      {name: "Johann Sebastian Bach", ids: ["1"]},
+      {name: "Wolfgang Amadeus Mozart", ids: ["1"]},
+    ],
+  );
+});
 
 test("does not merge same-title works by different composers", () => {
   const sections = groupWorks([

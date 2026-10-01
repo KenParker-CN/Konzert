@@ -3,7 +3,7 @@ import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
 import { AlbumGrid } from "@/components/album-grid";
 import { TrackList } from "@/components/track-list";
-import { groupAlbums } from "@/lib/catalog";
+import { composerNamesOf, groupAlbums } from "@/lib/catalog";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
@@ -16,8 +16,9 @@ export function ComposerDetail({composerName}: {composerName: string}) {
   const {tracks, removeTracks} = useLibrary();
   const {closeComposer, backLabel} = useNav();
   const player = usePlayer();
-  const composerTracks = tracks.filter(
-    (track) => track.composer.trim().toLocaleLowerCase() === composerName.trim().toLocaleLowerCase(),
+  const composerKey = composerName.trim().toLocaleLowerCase();
+  const composerTracks = tracks.filter((track) =>
+    composerNamesOf(track).some((name) => name.toLocaleLowerCase() === composerKey),
   );
   const albums = groupAlbums(composerTracks);
   const sortedTracks = [...composerTracks].sort((a, b) =>
