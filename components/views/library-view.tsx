@@ -309,6 +309,7 @@ export function LibraryView() {
                             tracks={pagedTracks}
                             queueTracks={visibleTracks}
                             showIndex={false}
+                            showCoverArt
                             onRemove={(track) => void removeTracks([track.id])}
                         />
                         <SongsPagination
