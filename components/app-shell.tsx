@@ -130,7 +130,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
                 正在读取本地曲库…
               </p>
-            ) : view === "library" ? (
+            ) : view === "albums" || view === "artists" || view === "songs" ? (
               <LibraryView />
             ) : view === "favorites" ? (
               <FavoritesView />

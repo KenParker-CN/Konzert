@@ -34,25 +34,15 @@ import {useLibrary} from "@/lib/library-provider";
 import {useNav} from "@/lib/nav-provider";
 import {usePlayer} from "@/lib/player-provider";
 
-type Tab = "albums" | "songs" | "artists";
-
-const TABS: { id: Tab; label: string }[] = [
-    {id: "albums", label: "专辑"},
-    {id: "artists", label: "艺术家"},
-    {id: "songs", label: "歌曲"},
-
-];
-
 /** 歌曲列表分页大小；曲库大时避免一次性渲染过长列表。 */
 const SONGS_PAGE_SIZE = 20;
 
 export function LibraryView() {
     const {tracks, albums, importFolder, scanning, storageMode, removeTracks} =
         useLibrary();
-    const {albumKey, artistName, work, openAlbum: navigateToAlbum} = useNav();
+    const {view, albumKey, artistName, work, openAlbum: navigateToAlbum} = useNav();
     const player = usePlayer();
 
-    const [tab, setTab] = useState<Tab>("albums");
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
 
@@ -141,7 +131,7 @@ export function LibraryView() {
 
     return (
         <div className="flex flex-col gap-5">
-            {tab === "albums" && !query && recentAlbums.length > 0 ? (
+            {view === "albums" && !query && recentAlbums.length > 0 ? (
                 <section aria-label="最近添加的专辑" className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <h2 className="text-sm font-medium text-zinc-800">最近添加</h2>
@@ -194,23 +184,9 @@ export function LibraryView() {
             ) : null}
             <header className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-1 rounded-full bg-zinc-950/5 p-1">
-                        {TABS.map((item) => (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => setTab(item.id)}
-                                className={`rounded-full px-3.5 py-1.5 text-xs transition ${
-                                    tab === item.id
-                                        ? "bg-zinc-900 text-zinc-50"
-                                        : "text-zinc-500 hover:text-zinc-800"
-                                }`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                    </div>
-
+                    <h1 className="text-lg font-semibold text-zinc-900">
+                        {view === "albums" ? "专辑" : view === "artists" ? "艺术家" : "歌曲"}
+                    </h1>
                     <div className="flex items-center gap-2">
                         <div className="relative">
                             <IconSearch
@@ -264,7 +240,7 @@ export function LibraryView() {
                     {query ? (
                         <span className="text-blue-600">已按「{query}」筛选</span>
                     ) : null}
-                    {tab === "songs" ? (
+                    {view === "songs" ? (
                         <SortControl
                             value={sort}
                             labels={TRACK_SORT_LABELS}
@@ -279,7 +255,7 @@ export function LibraryView() {
                             }
                         />
                     ) : null}
-                    {tab === "albums" ? (
+                    {view === "albums" ? (
                         <SortControl
                             value={albumSort}
                             labels={ALBUM_SORT_LABELS}
@@ -293,7 +269,7 @@ export function LibraryView() {
                             }
                         />
                     ) : null}
-                    {tab === "artists" ? (
+                    {view === "artists" ? (
                         <SortControl
                             value={artistSort}
                             labels={ARTIST_SORT_LABELS}
@@ -310,7 +286,7 @@ export function LibraryView() {
                 </div>
             </header>
 
-            {tab === "songs" ? (
+            {view === "songs" ? (
                 visibleTracks.length === 0 ? (
                     <EmptyState
                         filtered
@@ -336,14 +312,14 @@ export function LibraryView() {
                 )
             ) : null}
 
-            {tab === "albums" ? (
+            {view === "albums" ? (
                 <AlbumGrid
                     albums={visibleAlbums}
                     emptyMessage={query ? "没有匹配的专辑" : undefined}
                 />
             ) : null}
 
-            {tab === "artists" ? (
+            {view === "artists" ? (
                 <ArtistGrid
                     artists={artistGroups}
                 />

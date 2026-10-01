@@ -6,7 +6,9 @@ import {
   IconClock,
   IconFolderPlus,
   IconHeart,
-  IconLibrary,
+  IconDisc,
+  IconMusic,
+  IconUsers,
   IconLoader2,
   IconSettings,
 } from "@tabler/icons-react";
@@ -16,8 +18,10 @@ import { formatTotalDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
 import { useNav, type ViewName } from "@/lib/nav-provider";
 
-const NAV_ITEMS: { id: ViewName; label: string; icon: typeof IconLibrary }[] = [
-  { id: "library", label: "音乐库", icon: IconLibrary },
+const NAV_ITEMS: { id: ViewName; label: string; icon: typeof IconDisc }[] = [
+  { id: "albums", label: "专辑", icon: IconDisc },
+  { id: "artists", label: "艺术家", icon: IconUsers },
+  { id: "songs", label: "歌曲", icon: IconMusic },
   { id: "favorites", label: "我的收藏", icon: IconHeart },
   { id: "history", label: "播放历史", icon: IconClock },
   { id: "settings", label: "设置", icon: IconSettings },
@@ -43,7 +47,7 @@ const getSidebarState = () =>
 const getServerSidebarState = () => false;
 
 export function Sidebar() {
-  const { view, setView, albumKey } = useNav();
+  const { view, setView } = useNav();
   const {
     tracks,
     albums,
@@ -69,7 +73,7 @@ export function Sidebar() {
     }));
   }, []);
 
-  const activeView = albumKey ? "library" : view;
+  const activeView = view;
 
   return (
     <aside
