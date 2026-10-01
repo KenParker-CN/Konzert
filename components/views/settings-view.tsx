@@ -142,7 +142,10 @@ export function SettingsView() {
           <button
             type="button"
             onClick={() => void refreshLibrary()}
-            disabled={scanning || settings.watchedFolders.length === 0}
+            disabled={
+              scanning ||
+              (settings.watchedFolders.length === 0 && settings.browserFolders.length === 0)
+            }
             className="flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-xs text-zinc-700 transition hover:bg-zinc-950/5 disabled:opacity-40"
           >
             <IconRefresh className="h-3.5 w-3.5" />
@@ -339,7 +342,7 @@ export function SettingsView() {
             </select>
           </label>
           <label className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">自动监控已导入文件夹</span>
+            <span className="text-zinc-500">自动检查已导入文件夹</span>
             <input
               type="checkbox"
               checked={settings.autoWatch}
@@ -348,18 +351,23 @@ export function SettingsView() {
             />
           </label>
           <div>
-            <p className="text-zinc-500">固定监控文件夹</p>
-            {settings.watchedFolders.length > 0 ? (
+            <p className="text-zinc-500">已导入文件夹</p>
+            {settings.watchedFolders.length + settings.browserFolders.length > 0 ? (
               <ul className="mt-2 flex flex-col gap-1 text-[11px] text-zinc-500">
                 {settings.watchedFolders.map((folder) => (
                   <li key={folder} className="truncate" title={folder}>
                     {folder}
                   </li>
                 ))}
+                {settings.browserFolders.map((folder) => (
+                  <li key={folder.id} className="truncate" title={folder.name}>
+                    {folder.name}（浏览器授权）
+                  </li>
+                ))}
               </ul>
             ) : (
               <p className="mt-2 text-[11px] text-zinc-400">
-                在桌面端扫描文件夹后会自动加入监控列表。
+                扫描文件夹后会加入列表；浏览器会在应用重新可见时检查变化。
               </p>
             )}
           </div>
@@ -386,7 +394,7 @@ export function SettingsView() {
         )}
         <p className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-500">
           <IconRefresh className="h-3 w-3" />
-          再次扫描同一文件夹时会按文件大小识别变化，已听次数与收藏不会丢失。
+          刷新会比较文件大小和修改时间，只重新读取变化的音频标签；浏览器在应用重新可见时自动检查，已听次数与收藏会保留。
         </p>
       </section>
 

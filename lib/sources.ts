@@ -76,6 +76,19 @@ export function registerMemoryFiles(files: File[]): Map<string, File> {
   return registered;
 }
 /** 向用户重新申请句柄的读取权限（必须由用户手势触发）。 */
+export async function ensureDirectoryReadPermission(
+  handle: FileSystemDirectoryHandle,
+  request = true,
+): Promise<boolean> {
+  try {
+    if ((await handle.queryPermission?.({ mode: "read" })) === "granted") return true;
+    if (!request || !handle.requestPermission) return false;
+    return (await handle.requestPermission({ mode: "read" })) === "granted";
+  } catch {
+    return false;
+  }
+}
+
 export async function ensureReadPermission(
   handle: FileSystemFileHandle,
 ): Promise<boolean> {

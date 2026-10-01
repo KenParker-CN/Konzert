@@ -63,6 +63,7 @@ export interface ScanCandidate {
   key: string;
   fileName: string;
   fileSize: number;
+  fileModifiedAt?: number;
   origin: AudioOrigin;
   /** 用于展示的相对位置。 */
   displayPath: string;
@@ -181,6 +182,7 @@ export async function collectFromPath(
 /** 浏览器：递归遍历 File System Access 句柄。 */
 export async function collectFromHandle(
   root: FileSystemDirectoryHandle,
+  sourceId: string | undefined,
   onProgress?: (progress: WalkProgress) => void,
 ): Promise<CollectResult> {
   const candidates: ScanCandidate[] = [];
@@ -201,8 +203,11 @@ export async function collectFromHandle(
         }
         if (!isAudioFileName(entry.name)) continue;
         let fileSize = 0;
+        let fileModifiedAt: number | undefined;
         try {
-          fileSize = (await entry.getFile()).size;
+          const file = await entry.getFile();
+          fileSize = file.size;
+          fileModifiedAt = file.lastModified || undefined;
         } catch {
           // 拿不到大小不影响后续解析，留 0 即可。
         }
@@ -210,7 +215,14 @@ export async function collectFromHandle(
           key: handleSourceKey(root.name, relativePath),
           fileName: entry.name,
           fileSize,
-          origin: { kind: "handle", handle: entry },
+          fileModifiedAt,
+          origin: {
+            kind: "handle",
+            handle: entry,
+            sourceId,
+            rootName: root.name,
+            relativePath,
+          },
           displayPath: `${root.name}/${relativePath}`,
         });
         onProgress?.({ label: relativePath, files: candidates.length });
@@ -246,6 +258,7 @@ export function collectFromFiles(files: File[]): CollectResult {
       key,
       fileName: file.name,
       fileSize: file.size,
+      fileModifiedAt: file.lastModified || undefined,
       origin: { kind: "memory", key: memorySourceKey(file) },
       displayPath: relativePath,
     });
@@ -327,6 +340,7 @@ async function parseCandidates(
       try {
         const file = await readOriginFile(candidate.origin, candidate.fileName);
         candidate.fileSize = file.size;
+        candidate.fileModifiedAt = file.lastModified || undefined;
         const metadata = await parseAudioFile(file, candidate.fileName);
         parsed.push({ candidate, parsed: metadata });
       } catch (error) {
@@ -372,7 +386,7 @@ export function buildOutcome(
     const id = trackIdFor(candidate.key);
     const existing = existingById.get(id);
 
-    // 文件大小一致即视为内容未变化，直接复用（同时保住封面与播放统计）。
+    // 文件大小和可用的修改时间一致时复用曲目与播放统计。
     const needsBitDepthRefresh =
       existing != null && existing.lossless && existing.bitDepth == null;
     const needsCopyrightRefresh =
@@ -383,6 +397,8 @@ export function buildOutcome(
       existing &&
       candidate.fileSize > 0 &&
       existing.fileSize === candidate.fileSize &&
+      (candidate.fileModifiedAt == null ||
+        existing.fileModifiedAt === candidate.fileModifiedAt) &&
       existing.duration > 0 &&
       !needsBitDepthRefresh &&
       !needsCopyrightRefresh
@@ -410,6 +426,7 @@ export function buildOutcome(
       copyright: metadata.copyright,
       fileName: candidate.fileName,
       fileSize: candidate.fileSize,
+      fileModifiedAt: candidate.fileModifiedAt ?? null,
       addedAt: existing?.addedAt ?? Date.now(),
       origin: candidate.origin,
       coverId: null,
@@ -441,7 +458,7 @@ export function buildOutcome(
 
 export type DirectorySource =
   | { kind: "path"; path: string }
-  | { kind: "handle"; handle: FileSystemDirectoryHandle };
+  | { kind: "handle"; handle: FileSystemDirectoryHandle; sourceId?: string };
 
 /**
  * 让用户选择一个音乐目录。
@@ -503,7 +520,7 @@ export async function scanDirectory(request: ScanRequest): Promise<ScanOutcome> 
   const collected =
     source.kind === "path"
       ? await collectFromPath(source.path, reportWalk)
-      : await collectFromHandle(source.handle, reportWalk);
+      : await collectFromHandle(source.handle, source.sourceId, reportWalk);
 
   throwIfAborted(signal);
 
@@ -609,8 +626,8 @@ export interface DiffScanRequest {
  * 差异扫描：遍历目录，比较现有曲库，仅解析新增/修改的文件。
  *
  * - 新文件（不在曲库中）→ 解析并标记为 added
- * - 修改的文件（大小变化）→ 重新解析并标记为 updated
- * - 未变化的文件（大小相同且已有时长）→ 跳过解析
+ * - 修改的文件（大小或可用的修改时间变化）→ 重新解析并标记为 updated
+ * - 未变化的文件（大小、可用的修改时间相同且已有时长）→ 跳过解析
  * - 已删除的文件（在曲库但不在磁盘上）→ 标记为 removed
  *   （会先检查父目录是否存在，避免外接硬盘拔出时误删）
  */
@@ -637,12 +654,13 @@ export async function scanDirectoryDifferential(
   const collected =
     source.kind === "path"
       ? await collectFromPath(source.path, reportWalk)
-      : await collectFromHandle(source.handle, reportWalk);
+      : await collectFromHandle(source.handle, source.sourceId, reportWalk);
 
   throwIfAborted(signal);
 
   // 建立现有 path 来源曲目的源键 → 曲目映射
   const existingByKey = new Map<string, Track>();
+  const existingById = new Map(existingTracks.map((track) => [track.id, track]));
   for (const track of existingTracks) {
     if (track.origin.kind === "path") {
       existingByKey.set(pathSourceKey(track.origin.path), track);
@@ -656,11 +674,16 @@ export async function scanDirectoryDifferential(
   let unchanged = 0;
 
   for (const candidate of collected.candidates) {
-    const existing = existingByKey.get(candidate.key);
+    const existing =
+      source.kind === "path"
+        ? existingByKey.get(candidate.key)
+        : existingById.get(trackIdFor(candidate.key));
     if (
       existing &&
       candidate.fileSize > 0 &&
       existing.fileSize === candidate.fileSize &&
+      (candidate.fileModifiedAt == null ||
+        existing.fileModifiedAt === candidate.fileModifiedAt) &&
       existing.duration > 0
     ) {
       unchanged += 1;
@@ -705,20 +728,40 @@ export async function scanDirectoryDifferential(
   // 查找已删除的文件（在曲库但不在磁盘上）
   const removed: Track[] = [];
   for (const track of existingTracks) {
-    if (track.origin.kind === "path") {
+    if (source.kind === "path" && track.origin.kind === "path") {
+      const rootPath = normalizePathKey(source.path.replace(/[\\/]+$/, ""));
+      const trackPath = normalizePathKey(track.origin.path);
+      const separator = source.path.includes("\\") ? "\\" : "/";
+      if (
+        trackPath !== rootPath &&
+        !trackPath.startsWith(`${rootPath}${separator}`)
+      ) {
+        continue;
+      }
       const key = pathSourceKey(track.origin.path);
       if (!onDiskKeys.has(key)) {
-        // 检查父目录是否存在，避免外接硬盘拔出时误删曲库记录
         const dirPath = track.origin.path.replace(/[^\\/]+$/, "");
         try {
-          if (await pathExists(dirPath)) {
-            removed.push(track);
-          }
-          // 父目录不可访问（可能是驱动器已拔出），跳过删除
+          if (await pathExists(dirPath)) removed.push(track);
         } catch {
           // 无法验证存在性，保守跳过
         }
       }
+    } else if (
+      source.kind === "handle" &&
+      track.origin.kind === "handle" &&
+      source.sourceId &&
+      track.origin.sourceId === source.sourceId &&
+      track.origin.relativePath &&
+      collected.failures.length === 0 &&
+      !onDiskKeys.has(
+        handleSourceKey(
+          track.origin.rootName ?? source.handle.name,
+          track.origin.relativePath,
+        ),
+      )
+    ) {
+      removed.push(track);
     }
   }
 
@@ -760,6 +803,7 @@ export async function importTrackFromPath(
   try {
     const file = await readOriginFile(candidate.origin, candidate.fileName);
     candidate.fileSize = file.size;
+    candidate.fileModifiedAt = file.lastModified || undefined;
     const metadata = await parseAudioFile(file, candidate.fileName);
     const outcome = buildOutcome(
       [{ candidate, parsed: metadata }],

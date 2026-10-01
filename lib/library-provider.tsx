@@ -43,7 +43,11 @@ import {
   scanDirectoryDifferential,
   scanFiles,
 } from "./scan";
-import { registerMemoryFiles, supportsDirectoryPicker } from "./sources";
+import {
+  ensureDirectoryReadPermission,
+  registerMemoryFiles,
+  supportsDirectoryPicker,
+} from "./sources";
 import { FileWatcher, reparseTrackMetadata, type FileChangeEvent } from "./watch";
 import {
   DEFAULT_SETTINGS,
@@ -129,6 +133,18 @@ function normalizeSettings(value: unknown): LibrarySettings {
     watchedFolders: Array.isArray(raw.watchedFolders)
       ? raw.watchedFolders.filter((path): path is string => typeof path === "string")
       : [],
+    browserFolders: Array.isArray(raw.browserFolders)
+      ? raw.browserFolders.filter(
+          (folder): folder is LibrarySettings["browserFolders"][number] =>
+            Boolean(
+              folder &&
+                typeof folder === "object" &&
+                typeof folder.id === "string" &&
+                typeof folder.name === "string" &&
+                folder.handle?.kind === "directory",
+            ),
+        )
+      : [],
     lastTrackId:
       typeof raw.lastTrackId === "string" ? raw.lastTrackId : null,
   };
@@ -160,6 +176,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const tracksRef = useRef<Track[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const fileWatcherRef = useRef<FileWatcher | null>(null);
+  const lastBrowserRefreshRef = useRef(0);
 
   /**
    * 运行环境（Tauri / 文件夹句柄 / 兼容模式）只在客户端可判定：
@@ -478,9 +495,32 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
             watchedFolders: [...new Set([...settings.watchedFolders, source.path])],
           });
         }
+        let scanSource = source;
+        if (source.kind === "handle") {
+          let existingFolder: LibrarySettings["browserFolders"][number] | undefined;
+          for (const folder of settings.browserFolders) {
+            if (
+              folder.handle.isSameEntry
+                ? await folder.handle.isSameEntry(source.handle)
+                : folder.name === source.handle.name
+            ) {
+              existingFolder = folder;
+              break;
+            }
+          }
+          const folder = existingFolder ?? {
+            id: crypto.randomUUID(),
+            name: source.handle.name,
+            handle: source.handle,
+          };
+          if (!existingFolder) {
+            updateSettings({ browserFolders: [...settings.browserFolders, folder] });
+          }
+          scanSource = { ...source, sourceId: folder.id };
+        }
         await runScan((onProgress, signal) =>
-          scanDirectory({
-            source,
+          scanDirectoryDifferential({
+            source: scanSource,
             existingTracks: tracksRef.current,
             onProgress,
             signal,
@@ -509,21 +549,39 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         signal,
       }),
     );
-  }, [runScan, scanning, settings.watchedFolders, updateSettings]);
+  }, [runScan, scanning, settings.browserFolders, settings.watchedFolders, updateSettings]);
 
-  const refreshLibrary = useCallback(async () => {
+  const refreshLibrary = useCallback(async (requestPermission = true) => {
     if (scanning) return;
-    const folders = settings.watchedFolders;
-    if (folders.length === 0) {
+    const sources = [
+      ...settings.watchedFolders.map((path) => ({ kind: "path" as const, path })),
+      ...settings.browserFolders.map((folder) => ({
+        kind: "handle" as const,
+        handle: folder.handle,
+        sourceId: folder.id,
+        name: folder.name,
+      })),
+    ];
+    if (sources.length === 0) {
       setError("还没有固定监控的音乐文件夹，请先扫描一个文件夹。");
       return;
     }
 
     try {
-      for (const path of folders) {
+      for (const source of sources) {
+        if (source.kind === "handle") {
+          const permitted = await ensureDirectoryReadPermission(
+            source.handle,
+            requestPermission,
+          );
+          if (!permitted) {
+            if (requestPermission) setError(`请重新授权读取文件夹「${source.name}」`);
+            continue;
+          }
+        }
         await runScan((onProgress, signal) =>
           scanDirectoryDifferential({
-            source: { kind: "path", path },
+            source,
             existingTracks: tracksRef.current,
             onProgress,
             signal,
@@ -533,7 +591,26 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "刷新音乐库失败");
     }
-  }, [runScan, scanning, settings.watchedFolders]);
+  }, [runScan, scanning, settings.browserFolders, settings.watchedFolders]);
+
+  useEffect(() => {
+    if (!ready || !settings.autoWatch || settings.browserFolders.length === 0) return;
+
+    const refreshIfDue = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastBrowserRefreshRef.current < 60_000) return;
+      lastBrowserRefreshRef.current = Date.now();
+      void refreshLibrary(false);
+    };
+    const interval = window.setInterval(refreshIfDue, 60_000);
+    window.addEventListener("focus", refreshIfDue);
+    document.addEventListener("visibilitychange", refreshIfDue);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshIfDue);
+      document.removeEventListener("visibilitychange", refreshIfDue);
+    };
+  }, [ready, refreshLibrary, settings.autoWatch, settings.browserFolders.length]);
 
   const importFiles = useCallback(
     async (files: File[]) => {

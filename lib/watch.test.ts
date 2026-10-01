@@ -16,11 +16,16 @@ import type { ReleaseInfo, Track } from "./types";
 
 const releaseInfo: ReleaseInfo = { display: null, year: null, sortValue: 0 };
 
-function makePathCandidate(filePath: string, fileSize = 0): ScanCandidate {
+function makePathCandidate(
+  filePath: string,
+  fileSize = 0,
+  fileModifiedAt?: number,
+): ScanCandidate {
   return {
     key: pathSourceKey(filePath),
     fileName: filePath.split(/[/\\]/).pop() ?? "",
     fileSize,
+    fileModifiedAt,
     origin: { kind: "path", path: filePath },
     displayPath: filePath,
   };
@@ -51,15 +56,16 @@ function makeParsedAudio(overrides: Partial<ParsedAudio> = {}): ParsedAudio {
 interface ParsedEntryOptions {
   parsedOverrides?: Partial<ParsedAudio>;
   fileSize?: number;
+  fileModifiedAt?: number;
 }
 
 function makeParsedEntry(
   filePath: string,
   opts: ParsedEntryOptions = {},
 ): ParsedEntry {
-  const { parsedOverrides, fileSize = 5000000 } = opts;
+  const { parsedOverrides, fileSize = 5000000, fileModifiedAt } = opts;
   return {
-    candidate: makePathCandidate(filePath, fileSize),
+    candidate: makePathCandidate(filePath, fileSize, fileModifiedAt),
     parsed: makeParsedAudio(parsedOverrides),
   };
 }
@@ -314,6 +320,25 @@ test("buildOutcome: unchanged file (same size) is skipped", () => {
   assert.equal(result.added.length, 0);
   assert.equal(result.updated.length, 0);
   assert.equal(result.unchanged, 1);
+});
+
+test("buildOutcome: same-size file with changed modification time is updated", () => {
+  const filePath = "/music/existing.flac";
+  const track = makeTrack(filePath, {
+    fileSize: 5000000,
+    fileModifiedAt: 1000,
+    duration: 180,
+  });
+  const entry = makeParsedEntry(filePath, {
+    fileSize: 5000000,
+    fileModifiedAt: 2000,
+  });
+
+  const result = buildOutcome([entry], [track]);
+
+  assert.equal(result.updated.length, 1);
+  assert.equal(result.unchanged, 0);
+  assert.equal(result.updated[0].fileModifiedAt, 2000);
 });
 
 test("buildOutcome: file with changed size is classified as updated", () => {

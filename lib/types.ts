@@ -12,7 +12,13 @@ export type AudioOrigin =
   /** Tauri（或任何拥有绝对路径的环境）下的本地文件路径。 */
   | { kind: "path"; path: string }
   /** 浏览器 File System Access API 得到的文件句柄，可持久化到 IndexedDB。 */
-  | { kind: "handle"; handle: FileSystemFileHandle }
+  | {
+      kind: "handle";
+      handle: FileSystemFileHandle;
+      sourceId?: string;
+      rootName?: string;
+      relativePath?: string;
+    }
   /** 仅存在于当前会话内存中的文件（拖拽、<input type="file">）。 */
   | { kind: "memory"; key: string };
 
@@ -52,6 +58,7 @@ export interface Track {
   lossless: boolean;
   fileName: string;
   fileSize: number;
+  fileModifiedAt?: number | null;
   addedAt: number;
   origin: AudioOrigin;
   /** 指向 covers 存储中的封面；没有封面时为 null。 */
@@ -103,6 +110,7 @@ export interface LibrarySettings {
   language: "zh-CN" | "en-US";
   autoWatch: boolean;
   watchedFolders: string[];
+  browserFolders: { id: string; name: string; handle: FileSystemDirectoryHandle }[];
   /** 上次播放的曲目，便于下次启动还原。 */
   lastTrackId: string | null;
 }
@@ -129,6 +137,7 @@ export const DEFAULT_SETTINGS: LibrarySettings = {
   language: "zh-CN",
   autoWatch: true,
   watchedFolders: [],
+  browserFolders: [],
   lastTrackId: null,
 };
 
