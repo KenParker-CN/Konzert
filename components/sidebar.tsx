@@ -12,6 +12,7 @@ import {
   IconPiano,
   IconLoader2,
   IconSettings,
+  IconLayoutDashboard,
 } from "@tabler/icons-react";
 import { useCallback, useSyncExternalStore } from "react";
 import { AppIcon } from "@/components/app-icon";
@@ -20,6 +21,7 @@ import { useLibrary } from "@/lib/library-provider";
 import { useNav, type ViewName } from "@/lib/nav-provider";
 
 const NAV_ITEMS: { id: ViewName; label: string; icon: typeof IconDisc }[] = [
+  { id: "library", label: "Library", icon: IconLayoutDashboard },
   { id: "albums", label: "专辑", icon: IconDisc },
   { id: "artists", label: "艺术家", icon: IconUsers },
   { id: "composers", label: "作曲家", icon: IconPiano },

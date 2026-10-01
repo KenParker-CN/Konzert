@@ -123,16 +123,6 @@ export function LibraryView() {
         return <ComposerDetail composerName={composerName}/>;
     }
 
-    if (tracks.length === 0) {
-        return (
-            <EmptyState
-                onImport={() => void importFolder()}
-                scanning={scanning}
-                storageMode={storageMode}
-            />
-        );
-    }
-
     const updateQuery = (value: string) => {
         setQuery(value);
         setPage(1);
@@ -241,13 +231,15 @@ export function LibraryView() {
 
                 {/* 概览与排序 */}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-zinc-500">
-                    <span>{visibleTracks.length} 首曲目</span>
-                    <span className="text-zinc-300">·</span>
-                    <span>{visibleAlbums.length} 张专辑</span>
-                    <span className="text-zinc-300">·</span>
-                    <span>{artistGroups.length} 位艺术家</span>
-                    <span className="text-zinc-300">·</span>
-                    <span>{composerGroups.length} 位作曲家</span>
+                    <span>
+                        {view === "albums"
+                            ? `${visibleAlbums.length} 张专辑`
+                            : view === "artists"
+                              ? `${artistGroups.length} 位艺术家`
+                              : view === "composers"
+                                ? `${composerGroups.length} 位作曲家`
+                                : `${visibleTracks.length} 首歌曲`}
+                    </span>
                     {query ? (
                         <span className="text-blue-600">已按「{query}」筛选</span>
                     ) : null}
@@ -297,7 +289,13 @@ export function LibraryView() {
                 </div>
             </header>
 
-            {view === "songs" ? (
+            {tracks.length === 0 ? (
+                <EmptyState
+                    onImport={() => void importFolder()}
+                    scanning={scanning}
+                    storageMode={storageMode}
+                />
+            ) : view === "songs" ? (
                 visibleTracks.length === 0 ? (
                     <EmptyState
                         filtered

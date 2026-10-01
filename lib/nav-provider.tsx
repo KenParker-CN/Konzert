@@ -20,6 +20,7 @@ import {
 import type { CatalogReference } from "./catalog";
 
 export type ViewName =
+  | "library"
   | "albums"
   | "artists"
   | "composers"
@@ -90,6 +91,7 @@ function fallbackPathForDetail(pathname: string): string {
 
 function backLabelForPath(pathname: string): string {
   const resource = pathname.split("/").filter(Boolean)[0];
+  if (resource === "library") return "返回 Library";
   if (resource === "favorites") return "返回我的收藏";
   if (resource === "history") return "返回播放历史";
   if (resource === "albums") {
@@ -123,6 +125,9 @@ function routeState(pathname: string): {
   const resource = segments[0];
   const id = segments.length === 2 ? decodeSegment(segments[1]) : null;
 
+  if (resource === "library") {
+    return {view: "library", albumKey: null, artistName: null, composerName: null, work: null};
+  }
   if (resource === "settings") {
     return {view: "settings", albumKey: null, artistName: null, composerName: null, work: null};
   }
@@ -163,7 +168,7 @@ function routeState(pathname: string): {
     }
   }
 
-  return {view: "albums", albumKey: null, artistName: null, composerName: null, work: null};
+  return {view: "library", albumKey: null, artistName: null, composerName: null, work: null};
 }
 
 export function NavProvider({children}: { children: ReactNode }) {

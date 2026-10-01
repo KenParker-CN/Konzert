@@ -15,6 +15,7 @@ import { TitleBar } from "@/components/title-bar";
 import { FavoritesView } from "@/components/views/favorites-view";
 import { HistoryView } from "@/components/views/history-view";
 import { LibraryView } from "@/components/views/library-view";
+import { DashboardView } from "@/components/views/dashboard-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
@@ -130,6 +131,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
                 正在读取本地曲库…
               </p>
+            ) : view === "library" ? (
+              <DashboardView />
             ) : view === "albums" || view === "artists" || view === "composers" || view === "songs" ? (
               <LibraryView />
             ) : view === "favorites" ? (
