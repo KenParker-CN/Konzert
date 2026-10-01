@@ -35,7 +35,7 @@ export function DashboardView() {
           const addedB = b.tracks.reduce((latest, track) => Math.max(latest, track.addedAt), 0);
           return addedB - addedA;
         })
-        .slice(0, 4),
+        .slice(0, 8),
     [albums],
   );
   const counts: Record<string, number> = {

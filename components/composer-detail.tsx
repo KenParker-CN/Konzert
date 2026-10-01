@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlbumGrid } from "@/components/album-grid";
 import { TrackList } from "@/components/track-list";
 import { composerNamesOf, groupAlbums } from "@/lib/catalog";
+import { compareNames } from "@/lib/collation";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
@@ -24,10 +25,10 @@ export function ComposerDetail({composerName}: {composerName: string}) {
   const sortedTracks = [...composerTracks].sort((a, b) =>
     b.playCount - a.playCount ||
     b.releaseDate.sortValue - a.releaseDate.sortValue ||
-    a.album.localeCompare(b.album, "zh-Hans-CN", {numeric: true}) ||
+    compareNames(a.album, b.album) ||
     (a.discNo ?? 1) - (b.discNo ?? 1) ||
     (a.trackNo ?? Number.MAX_SAFE_INTEGER) - (b.trackNo ?? Number.MAX_SAFE_INTEGER) ||
-    a.title.localeCompare(b.title, "zh-Hans-CN", {numeric: true}),
+    compareNames(a.title, b.title),
   );
   const [trackPage, setTrackPage] = useState(1);
   const trackPageCount = Math.max(1, Math.ceil(sortedTracks.length / TRACKS_PAGE_SIZE));

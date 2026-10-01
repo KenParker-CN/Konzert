@@ -79,7 +79,7 @@ export function LibraryView() {
                     ),
                 }))
                 .sort((a, b) => b.addedAt - a.addedAt)
-                .slice(0, 5)
+                .slice(0, 10)
                 .map(({album}) => album),
         [albums],
     );

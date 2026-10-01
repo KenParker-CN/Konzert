@@ -1,5 +1,6 @@
 /** 曲库的纯函数工具：专辑归组、艺术家拆分归组、排序、搜索、封面键。 */
 
+import {compareNames} from "./collation";
 import {type AlbumSummary, ReleaseInfo, type Track, UNKNOWN_ALBUM, UNKNOWN_ARTIST,} from "./types";
 
 /** 排序方向。 */
@@ -114,8 +115,12 @@ export function coverIdFor(track: Track, albumKey: string): string {
         : `cover:${albumKey}`;
 }
 
+/**
+ * 名称排序：特殊符号 → 数字 → 小写 → 大写 → 假名 → 谚文 → 汉字。
+ * 规则集中在 {@link ./collation}，此处保持原有函数名以免改动调用方。
+ */
 function compareText(a: string, b: string): number {
-    return a.localeCompare(b, "zh-Hans-CN", {numeric: true, sensitivity: "base"});
+    return compareNames(a, b);
 }
 
 /** 专辑内的曲目顺序：碟号 → 音轨号 → 标题。 */
