@@ -35,7 +35,14 @@ import {
   storageAvailable,
 } from "./db";
 import { filesFromDataTransfer, pickFilesFromInput } from "./file-input";
-import { pickLibraryDirectory, scanDirectory, scanFiles } from "./scan";
+import {
+  importTrackFromPath,
+  normalizePathKey,
+  pickLibraryDirectory,
+  scanDirectory,
+  scanDirectoryDifferential,
+  scanFiles,
+} from "./scan";
 import { registerMemoryFiles, supportsDirectoryPicker } from "./sources";
 import { FileWatcher, reparseTrackMetadata, type FileChangeEvent } from "./watch";
 import {
@@ -174,54 +181,63 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const handleFileChange = useCallback(async (event: FileChangeEvent) => {
     const currentTracks = tracksRef.current;
 
-    // 查找匹配的曲目（通过路径）
-    const { normalizePathKey, pathSourceKey } = await import("./scan");
-    pathSourceKey(event.path);
     const targetTrack = currentTracks.find(
       (track) =>
         track.origin.kind === "path" &&
         normalizePathKey(track.origin.path) === normalizePathKey(event.path),
     );
 
-    if (!targetTrack) return;
-
     if (event.kind === "remove") {
-      // 文件被删除，从曲库中移除
+      if (!targetTrack) return;
+      // 验证文件确实不存在，避免外接硬盘拔出时误删曲库记录。
+      // exists 返回 false 为真实删除；抛出异常（如驱动器已拔出）则跳过。
+      try {
+        const { exists } = await import("@tauri-apps/plugin-fs");
+        if (await exists(event.path)) return;
+      } catch {
+        console.warn(
+          `Skipping deletion of ${event.path}: cannot verify existence`,
+        );
+        return;
+      }
       await deleteTracks([targetTrack.id]);
       setTracks((current) => current.filter((t) => t.id !== targetTrack.id));
       return;
     }
 
-    // 文件被修改或创建，重新解析元数据
-    const updated = await reparseTrackMetadata(targetTrack);
-    if (updated) {
-      await saveTracks([updated]);
-      setTracks((current) =>
-        current.map((t) => (t.id === updated.id ? updated : t)),
-      );
+    if (targetTrack) {
+      // 现有曲目被修改，重新解析元数据
+      const updated = await reparseTrackMetadata(targetTrack);
+      if (updated) {
+        await saveTracks([updated]);
+        setTracks((current) =>
+          current.map((t) => (t.id === updated.id ? updated : t)),
+        );
+      }
+      return;
+    }
+
+    // 新文件导入（create 事件且没有匹配的现有曲目）
+    const outcome = await importTrackFromPath(event.path, currentTracks);
+    const track = outcome.added[0] ?? outcome.updated[0];
+    if (track) {
+      await saveTracks([track]);
+      setTracks((current) => [...current, track]);
+      if (outcome.covers.length > 0) {
+        await saveCovers(outcome.covers);
+      }
     }
   }, []);
 
   /** 启动文件系统监听 */
   useEffect(() => {
     if (!FileWatcher.isSupported() || !ready || !settings.autoWatch) return;
+    if (settings.watchedFolders.length === 0) return;
 
-    const currentTracks = tracksRef.current;
-    if (currentTracks.length === 0) return;
-
-    // 收集所有需要监听的目录（只监听 Tauri 路径来源的文件）
-    const watchPaths = new Set<string>();
-    for (const track of currentTracks) {
-      if (track.origin.kind === "path") {
-        const dirPath = track.origin.path.replace(/[^\\/]+$/, "");
-        watchPaths.add(dirPath);
-      }
-    }
-
-    if (watchPaths.size === 0) return;
-
+    // 直接监听固定监控的文件夹，而非推导自已有曲目路径。
+    // 这样即使曲库为空（首次启动未扫描）或刚完成扫描，监听器都会随文件夹列表更新。
     const watcher = new FileWatcher({
-      paths: [...watchPaths],
+      paths: settings.watchedFolders,
       onEvent: handleFileChange,
       onError: (error) => {
         console.error("File watcher error:", error);
@@ -230,16 +246,13 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
     fileWatcherRef.current = watcher;
 
-    watcher.start().catch((error) => {
-      console.error("Failed to start file watcher:", error);
-      fileWatcherRef.current = null;
-    });
+    void watcher.start();
 
     return () => {
-      watcher.stop();
+      void watcher.stop();
       fileWatcherRef.current = null;
     };
-  }, [ready, handleFileChange, settings.autoWatch]);
+  }, [ready, handleFileChange, settings.autoWatch, settings.watchedFolders]);
 
   // ------------------------------------------------------------ 初始化
 
@@ -349,7 +362,9 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   // ------------------------------------------------------------ 导入扫描
 
   const applyOutcome = useCallback(
-    async (outcome: Awaited<ReturnType<typeof scanDirectory>>) => {
+    async (
+      outcome: Awaited<ReturnType<typeof scanDirectory>> & { removed?: Track[] },
+    ) => {
       const changed = [...outcome.added, ...outcome.updated];
       if (changed.length > 0) {
         await saveTracks(changed);
@@ -357,6 +372,50 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           const merged = new Map(current.map((track) => [track.id, track]));
           for (const track of changed) merged.set(track.id, track);
           return [...merged.values()];
+        });
+      }
+      if (outcome.removed && outcome.removed.length > 0) {
+        const removedIds = new Set(outcome.removed.map((t) => t.id));
+        await deleteTracks([...removedIds]);
+
+        // 清理孤儿封面（不再被任何曲目引用）
+        const current = tracksRef.current;
+        const remaining = current.filter((t) => !removedIds.has(t.id));
+        const usedCovers = new Set(
+          remaining.map((t) => t.coverId).filter(Boolean) as string[],
+        );
+        const orphanCovers = [
+          ...new Set(
+            outcome.removed
+              .map((t) => t.coverId)
+              .filter(
+                (id): id is string =>
+                  typeof id === "string" && !usedCovers.has(id),
+              ),
+          ),
+        ];
+        if (orphanCovers.length > 0) await deleteCovers(orphanCovers);
+
+        // 从状态移除已删除曲目的封布
+        setTracks((currentTracks) =>
+          currentTracks.filter((t) => !removedIds.has(t.id)),
+        );
+
+        // 清理收藏
+        setFavorites((existing) => {
+          const next = new Set(existing);
+          for (const id of removedIds) next.delete(trackFavoriteKey(id));
+          void saveKv(KV_FAVORITES, [...next]);
+          return next;
+        });
+
+        // 清理播放历史
+        setHistory((existing) => {
+          const next = existing.filter(
+            (entry) => !removedIds.has(entry.trackId),
+          );
+          void saveKv(KV_HISTORY, next);
+          return next;
         });
       }
       if (outcome.covers.length > 0) {
@@ -463,7 +522,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     try {
       for (const path of folders) {
         await runScan((onProgress, signal) =>
-          scanDirectory({
+          scanDirectoryDifferential({
             source: { kind: "path", path },
             existingTracks: tracksRef.current,
             onProgress,

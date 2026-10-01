@@ -14,6 +14,8 @@ export interface FileChangeEvent {
   path: string;
   /** 事件类型 */
   kind: "modify" | "create" | "remove";
+  /** 是否为目录事件（目录变更会被忽略）。 */
+  isDirectory: boolean;
 }
 
 export interface WatchOptions {
@@ -37,7 +39,7 @@ const MAX_RETRIES = 3;
 /**
  * 防抖器：合并短时间内对同一文件的多次事件。
  */
-class Debouncer {
+export class Debouncer {
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
 
   schedule(key: string, callback: () => void): void {
@@ -57,6 +59,41 @@ class Debouncer {
     }
     this.timers.clear();
   }
+}
+
+/**
+ * 将底层 WatchEventKind 归一化为应用层 FileChangeEvent。
+ *
+ * - 忽略 access 类事件（否则「重读文件 → 触发 access」会形成死循环）；
+ * - 忽略目录变更事件（仅处理文件）。
+ *
+ * @returns 归一化后的事件，或 null 表示应被忽略。
+ */
+export function normalizeWatchEvent(
+  type: WatchEventKind,
+  path: string,
+): FileChangeEvent | null {
+  let kind: FileChangeEvent["kind"] | null = null;
+  let isDirectory = false;
+
+  if (type === "any") {
+    // 无法细分的 any 事件按「修改」保守处理。
+    kind = "modify";
+  } else if (type !== "other") {
+    if ("modify" in type) {
+      kind = "modify";
+    } else if ("create" in type) {
+      kind = "create";
+      isDirectory = type.create.kind === "folder";
+    } else if ("remove" in type) {
+      kind = "remove";
+      isDirectory = type.remove.kind === "folder";
+    }
+  }
+
+  if (!kind || isDirectory) return null;
+
+  return { path, kind, isDirectory };
 }
 
 /**
@@ -84,27 +121,29 @@ export class FileWatcher {
 
     if (this.watching) return;
 
-    try {
-      const { watch } = await import("@tauri-apps/plugin-fs");
+    const { watch } = await import("@tauri-apps/plugin-fs");
 
-      for (const path of this.options.paths) {
+    // 逐个路径监听：单个路径失败（如外部硬盘已拔出）不应阻止其他路径的监听。
+    for (const path of this.options.paths) {
+      try {
         const unwatch = await watch(
           path,
           (event) => {
-            for (const path of event.paths) {
-              this.handleEvent(event.type, path);
+            for (const eventPath of event.paths) {
+              this.handleEvent(event.type, eventPath);
             }
           },
           { recursive: true, delayMs: DEBOUNCE_MS },
         );
         this.unwatchCallbacks.push(unwatch);
+      } catch (error) {
+        this.options.onError?.(
+          error instanceof Error ? error : new Error(String(error)),
+        );
       }
-
-      this.watching = true;
-    } catch (error) {
-      this.unwatchCallbacks = [];
-      throw error instanceof Error ? error : new Error(String(error));
     }
+
+    this.watching = true;
   }
 
   /** 停止监听 */
@@ -124,22 +163,11 @@ export class FileWatcher {
   /**
    * 处理文件系统事件。
    *
-   * WatchEvent.type 是 notify 的事件联合类型：只关心增/删/改；
-   * access 类事件必须忽略，否则「重读文件 → 触发 access」会形成死循环。
+   * 委托给 normalizeWatchEvent 归一化，过滤目录事件和 access 事件。
    */
   private handleEvent(type: WatchEventKind, path: string): void {
-    let kind: FileChangeEvent["kind"] | null = null;
-    if (type === "any") {
-      // 无法细分的 any 事件按「修改」保守处理。
-      kind = "modify";
-    } else if (type !== "other") {
-      if ("modify" in type) kind = "modify";
-      else if ("create" in type) kind = "create";
-      else if ("remove" in type) kind = "remove";
-    }
-    if (!kind) return;
-
-    const event: FileChangeEvent = { path, kind };
+    const event = normalizeWatchEvent(type, path);
+    if (!event) return;
 
     // 使用路径作为防抖键
     this.debouncer.schedule(path, () => {

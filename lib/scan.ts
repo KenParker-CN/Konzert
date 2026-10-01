@@ -130,7 +130,7 @@ export async function collectFromPath(
   rootPath: string,
   onProgress?: (progress: WalkProgress) => void,
 ): Promise<CollectResult> {
-  const { readDir } = await import("@tauri-apps/plugin-fs");
+  const { readDir, stat } = await import("@tauri-apps/plugin-fs");
   const candidates: ScanCandidate[] = [];
   const failures: ScanFailure[] = [];
   let skippedDirectories = 0;
@@ -158,10 +158,16 @@ export async function collectFromPath(
         continue;
       }
       if (!entry.isFile || !isAudioFileName(entry.name)) continue;
+      let fileSize = 0;
+      try {
+        fileSize = (await stat(fullPath)).size;
+      } catch {
+        // stat 失败（无权限或文件被占用），大小留 0，后续解析时会重新获取。
+      }
       candidates.push({
         key: pathSourceKey(fullPath),
         fileName: entry.name,
-        fileSize: 0,
+        fileSize,
         origin: { kind: "path", path: fullPath },
         displayPath: fullPath,
       });
@@ -257,6 +263,11 @@ export interface ScanOutcome {
   unchanged: number;
   failures: ScanFailure[];
   covers: { id: string; blob: Blob }[];
+  /**
+   * 在磁盘上已消失的曲目（仅在差异扫描时填充）。
+   * 调用方负责从 IndexedDB 与状态中删除这些记录。
+   */
+  removed?: Track[];
 }
 
 export interface ScanOptions {
@@ -270,7 +281,7 @@ function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new Error("扫描已取消");
 }
 
-interface ParsedEntry {
+export interface ParsedEntry {
   candidate: ScanCandidate;
   parsed: ParsedAudio;
 }
@@ -572,4 +583,198 @@ export async function scanFiles(request: FileScanRequest): Promise<ScanOutcome> 
     ...buildOutcome(parsed, existingTracks),
     failures,
   };
+}
+
+// ---------------------------------------------------------------- 差异扫描
+
+/** 检查路径是否存在（Tauri 环境）。错误时返回 false。 */
+export async function pathExists(path: string): Promise<boolean> {
+  if (!isTauriRuntime()) return false;
+  try {
+    const { exists } = await import("@tauri-apps/plugin-fs");
+    return await exists(path);
+  } catch {
+    return false;
+  }
+}
+
+export interface DiffScanRequest {
+  source: DirectorySource;
+  existingTracks: Track[];
+  onProgress?: (progress: ScanProgress) => void;
+  signal?: AbortSignal;
+}
+
+/**
+ * 差异扫描：遍历目录，比较现有曲库，仅解析新增/修改的文件。
+ *
+ * - 新文件（不在曲库中）→ 解析并标记为 added
+ * - 修改的文件（大小变化）→ 重新解析并标记为 updated
+ * - 未变化的文件（大小相同且已有时长）→ 跳过解析
+ * - 已删除的文件（在曲库但不在磁盘上）→ 标记为 removed
+ *   （会先检查父目录是否存在，避免外接硬盘拔出时误删）
+ */
+export async function scanDirectoryDifferential(
+  request: DiffScanRequest,
+): Promise<ScanOutcome> {
+  const { source, existingTracks, onProgress, signal } = request;
+
+  onProgress?.({
+    phase: "walking",
+    processed: 0,
+    total: 0,
+    label: "正在遍历文件夹",
+  });
+
+  const reportWalk = (progress: WalkProgress) =>
+    onProgress?.({
+      phase: "walking",
+      processed: progress.files,
+      total: 0,
+      label: progress.label,
+    });
+
+  const collected =
+    source.kind === "path"
+      ? await collectFromPath(source.path, reportWalk)
+      : await collectFromHandle(source.handle, reportWalk);
+
+  throwIfAborted(signal);
+
+  // 建立现有 path 来源曲目的源键 → 曲目映射
+  const existingByKey = new Map<string, Track>();
+  for (const track of existingTracks) {
+    if (track.origin.kind === "path") {
+      existingByKey.set(pathSourceKey(track.origin.path), track);
+    }
+  }
+
+  const onDiskKeys = new Set(collected.candidates.map((c) => c.key));
+
+  // 划分需要解析与跳过不解析的候选文件
+  const toParse: ScanCandidate[] = [];
+  let unchanged = 0;
+
+  for (const candidate of collected.candidates) {
+    const existing = existingByKey.get(candidate.key);
+    if (
+      existing &&
+      candidate.fileSize > 0 &&
+      existing.fileSize === candidate.fileSize &&
+      existing.duration > 0
+    ) {
+      unchanged += 1;
+    } else {
+      toParse.push(candidate);
+    }
+  }
+
+  let added: Track[] = [];
+  let updated: Track[] = [];
+  let covers: { id: string; blob: Blob }[] = [];
+  let parseFailures: ScanFailure[] = [];
+
+  if (toParse.length > 0) {
+    onProgress?.({
+      phase: "parsing",
+      processed: 0,
+      total: toParse.length,
+      label: "正在读取标签",
+    });
+    const { parsed, failures } = await parseCandidates(toParse, {
+      onProgress,
+      signal,
+    });
+    throwIfAborted(signal);
+    parseFailures = failures;
+
+    onProgress?.({
+      phase: "saving",
+      processed: parsed.length,
+      total: toParse.length,
+      label: "正在写入本地曲库",
+    });
+
+    const buildResult = buildOutcome(parsed, existingTracks);
+    added = buildResult.added;
+    updated = buildResult.updated;
+    unchanged += buildResult.unchanged;
+    covers = buildResult.covers;
+  }
+
+  // 查找已删除的文件（在曲库但不在磁盘上）
+  const removed: Track[] = [];
+  for (const track of existingTracks) {
+    if (track.origin.kind === "path") {
+      const key = pathSourceKey(track.origin.path);
+      if (!onDiskKeys.has(key)) {
+        // 检查父目录是否存在，避免外接硬盘拔出时误删曲库记录
+        const dirPath = track.origin.path.replace(/[^\\/]+$/, "");
+        try {
+          if (await pathExists(dirPath)) {
+            removed.push(track);
+          }
+          // 父目录不可访问（可能是驱动器已拔出），跳过删除
+        } catch {
+          // 无法验证存在性，保守跳过
+        }
+      }
+    }
+  }
+
+  return {
+    added,
+    updated,
+    removed,
+    unchanged,
+    failures: [...collected.failures, ...parseFailures],
+    covers,
+  };
+}
+
+/**
+ * 解析单个路径上的音频文件并生成曲目记录（用于文件监听自动导入）。
+ * 如果文件不是音频文件或解析失败，返回空结果。
+ */
+export async function importTrackFromPath(
+  filePath: string,
+  existingTracks: Track[],
+): Promise<{
+  added: Track[];
+  updated: Track[];
+  covers: { id: string; blob: Blob }[];
+}> {
+  const fileName = filePath.split(/[/\\]/).pop() ?? "";
+  if (!isAudioFileName(fileName)) {
+    return { added: [], updated: [], covers: [] };
+  }
+
+  const candidate: ScanCandidate = {
+    key: pathSourceKey(filePath),
+    fileName,
+    fileSize: 0,
+    origin: { kind: "path", path: filePath },
+    displayPath: filePath,
+  };
+
+  try {
+    const file = await readOriginFile(candidate.origin, candidate.fileName);
+    candidate.fileSize = file.size;
+    const metadata = await parseAudioFile(file, candidate.fileName);
+    const outcome = buildOutcome(
+      [{ candidate, parsed: metadata }],
+      existingTracks,
+    );
+    return {
+      added: outcome.added,
+      updated: outcome.updated,
+      covers: outcome.covers,
+    };
+  } catch (error) {
+    console.error(
+      `Failed to import file ${filePath}:`,
+      error instanceof Error ? error.message : error,
+    );
+    return { added: [], updated: [], covers: [] };
+  }
 }
