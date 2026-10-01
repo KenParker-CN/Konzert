@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AlbumGrid } from "@/components/album-grid";
 import { TrackList } from "@/components/track-list";
 import { artistNamesOf, groupAlbums, splitArtists } from "@/lib/catalog";
+import { compareNames } from "@/lib/collation";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
 import { useNav } from "@/lib/nav-provider";
@@ -45,11 +46,11 @@ export function ArtistDetail({ artistName }: { artistName: string }) {
         return b.releaseDate.sortValue - a.releaseDate.sortValue;
       }
       return (
-        a.album.localeCompare(b.album, "zh-Hans-CN", {numeric: true}) ||
+        compareNames(a.album, b.album) ||
         (a.discNo ?? 1) - (b.discNo ?? 1) ||
         (a.trackNo ?? Number.MAX_SAFE_INTEGER) -
           (b.trackNo ?? Number.MAX_SAFE_INTEGER) ||
-        a.title.localeCompare(b.title, "zh-Hans-CN", {numeric: true})
+        compareNames(a.title, b.title)
       );
     });
   const TRACKS_PAGE_SIZE = 10;
