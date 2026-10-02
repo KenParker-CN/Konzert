@@ -1,6 +1,8 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
+  catalogReferenceDisplay,
+  catalogNumbersMatch,
   catalogNumberOf,
   catalogReferenceOf,
   catalogReferencesOf,
@@ -9,6 +11,7 @@ import {
   groupTracksByDisc,
   groupWorks,
   searchTracks,
+  workIdentityKeyOf,
   workKeyOf,
   workTitleOf,
 } from "./catalog";
@@ -28,6 +31,27 @@ test("keeps the colon inside a TWV catalogue number", () => {
   assert.equal(
     workTitleOf("Concerto pour alto en sol majeur, TWV 51:G9: I. Allegro"),
     "Concerto pour alto en sol majeur, TWV 51:G9",
+  );
+});
+
+test("compares TWV catalogue letters case-sensitively", () => {
+  assert.deepEqual(catalogReferenceOf("TWV 51:EX1: I. Allegro"), {
+    system: "TWV",
+    number: "51:EX1",
+    display: "TWV 51:EX1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("TWV 51:eX1: I. Allegro"), {
+    system: "TWV",
+    number: "51:eX1",
+    display: "TWV 51:eX1",
+    index: 0,
+  });
+  assert.equal(catalogNumbersMatch("TWV", "51:EX1", "51:eX1"), false);
+  assert.equal(catalogNumbersMatch("RV", "1A", "1a"), true);
+  assert.notEqual(
+    workIdentityKeyOf(track("TWV 51:EX1: I. Allegro", "Telemann", "1")),
+    workIdentityKeyOf(track("TWV 51:eX1: I. Allegro", "Telemann", "2")),
   );
 });
 
@@ -52,6 +76,19 @@ test("parses multiple catalog numbers for one work", () => {
   );
 });
 
+test("parses abbreviated CPE Bach catalog numbers and displays standard notation", () => {
+  const wotquenne = catalogReferenceOf("Wq 55: I. Allegro");
+  const helm = catalogReferenceOf("H515: Allegro");
+
+  assert.equal(wotquenne?.system, "Wq.");
+  assert.equal(wotquenne?.number, "55");
+  assert.equal(wotquenne && catalogReferenceDisplay(wotquenne), "Wq. 55");
+  assert.equal(helm?.system, "H.");
+  assert.equal(helm?.number, "515");
+  assert.equal(helm && catalogReferenceDisplay(helm), "H. 515");
+  assert.equal(catalogReferenceOf("H. 1.5")?.number, "1.5");
+});
+
 test("uses the first colon for ordinary work titles", () => {
   assert.equal(workKeyOf("Violin Concerto: Allegro"), "violin concerto");
   assert.equal(workTitleOf("Violin Concerto: Allegro"), "Violin Concerto");
@@ -73,6 +110,52 @@ test("recognizes the ratio colon after a K catalogue number", () => {
     display: "K. 626",
     index: 9,
   });
+});
+
+test("normalizes Mozart K and KV title variants to the same catalogue number", () => {
+  const references = ["K 211", "K. 211", "KV 211"].map((title) =>
+    catalogReferenceOf(title),
+  );
+
+  assert.deepEqual(
+    references.map((reference) => ({
+      system: reference?.system,
+      number: reference?.number,
+    })),
+    [
+      { system: "K", number: "211" },
+      { system: "K", number: "211" },
+      { system: "K", number: "211" },
+    ],
+  );
+});
+
+test("recognizes Vivaldi RV catalogue numbers", () => {
+  assert.deepEqual(catalogReferenceOf("RV 1: I. Allegro"), {
+    system: "RV",
+    number: "1",
+    display: "RV 1",
+    index: 0,
+  });
+});
+
+test("recognizes BWV catalogue numbers and grouped number ranges", () => {
+  assert.deepEqual(catalogReferenceOf("BWV 1: Wie schön leuchtet der Morgenstern"), {
+    system: "BWV",
+    number: "1",
+    display: "BWV 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("BWV 1090-1120"), {
+    system: "BWV",
+    number: "1090-1120",
+    display: "BWV 1090-1120",
+    index: 0,
+  });
+  assert.equal(catalogNumbersMatch("BWV", "1090-1120", "1090"), true);
+  assert.equal(catalogNumbersMatch("BWV", "1090-1120", "1105"), true);
+  assert.equal(catalogNumbersMatch("BWV", "1090-1120", "1120"), true);
+  assert.equal(catalogNumbersMatch("BWV", "1090-1120", "1121"), false);
 });
 
 test("does not group titles without a valid leading work prefix", () => {

@@ -1,4 +1,6 @@
-export type ComposerWorkSystem = "KV" | "TWV" | "RV";
+import { catalogReferencesOf } from "./catalog";
+
+export type ComposerWorkSystem = "KV" | "TWV" | "RV" | "CPE" | "BWV";
 
 export interface ComposerWorksCatalog {
   system: ComposerWorkSystem;
@@ -11,6 +13,84 @@ export interface ComposerWork {
   title: string;
   type: string;
   key: string;
+}
+
+export interface ComposerWorkFilters {
+  query: string;
+  type: string;
+  key: string;
+}
+
+export const TWV_CATEGORIES = [
+  { id: "sacred-vocal", label: "TWV 1-15 宗教声乐作品", from: 1, to: 15 },
+  { id: "secular-vocal", label: "TWV 20-25 世俗声乐作品", from: 20, to: 25 },
+  { id: "keyboard-lute", label: "TWV 30-39 键盘与鲁特琴作品", from: 30, to: 39 },
+  { id: "chamber", label: "TWV 40-45 室内乐作品", from: 40, to: 45 },
+  { id: "orchestral", label: "TWV 50-55 管弦乐作品", from: 50, to: 55 },
+] as const;
+
+export type TwvCategoryId = (typeof TWV_CATEGORIES)[number]["id"];
+
+export function twvCategoryOfComposerWork(
+  work: ComposerWork,
+): TwvCategoryId | null {
+  const reference = catalogReferencesOf(work.catalogue).find(
+    ({ system }) => system === "TWV",
+  );
+  const section = reference?.number.match(/^(\d+)/)?.[1];
+  if (!section) return null;
+
+  const sectionNumber = Number(section);
+  return (
+    TWV_CATEGORIES.find(
+      ({ from, to }) => sectionNumber >= from && sectionNumber <= to,
+    )?.id ?? null
+  );
+}
+
+export function filterComposerWorks(
+  works: ComposerWork[],
+  filters: ComposerWorkFilters,
+): ComposerWork[] {
+  const query = filters.query.trim().toLocaleLowerCase();
+  return works.filter((work) => {
+    if (filters.type && work.type !== filters.type) return false;
+    if (filters.key && work.key !== filters.key) return false;
+    if (!query) return true;
+
+    return [
+      work.catalogue,
+      work.title,
+      work.type,
+      work.key,
+      ...Object.values(work.fields),
+    ]
+      .join("\n")
+      .toLocaleLowerCase()
+      .includes(query);
+  });
+}
+
+export function catalogReferenceOfComposerWork(
+  work: ComposerWork,
+  catalog: ComposerWorksCatalog,
+) {
+  return catalogReferencesOfComposerWork(work, catalog)[0] ?? null;
+}
+
+export function catalogReferencesOfComposerWork(
+  work: ComposerWork,
+  catalog: ComposerWorksCatalog,
+) {
+  const expectedSystems =
+    catalog.system === "KV"
+      ? ["K"]
+      : catalog.system === "CPE"
+        ? ["Wq.", "H."]
+        : [catalog.system];
+  return catalogReferencesOf(work.catalogue).filter(({ system }) =>
+    expectedSystems.includes(system),
+  );
 }
 
 const CATALOGS: Array<{
@@ -47,6 +127,27 @@ const CATALOGS: Array<{
       "a vivaldi",
       "vivaldi antonio",
       "antonio lucio vivaldi",
+    ],
+  },
+  {
+    system: "CPE",
+    aliases: [
+      "cpe bach",
+      "c p e bach",
+      "bach c p e",
+      "carl philipp emanuel bach",
+      "bach carl philipp emanuel",
+    ],
+  },
+  {
+    system: "BWV",
+    aliases: [
+      "johann sebastian bach",
+      "bach johann sebastian",
+      "j s bach",
+      "bach j s",
+      "js bach",
+      "bach js",
     ],
   },
 ];
@@ -180,10 +281,21 @@ export function composerWorksFromCsv(
   const catalogueColumn = headers.find(
     (header) => header.trim().toLocaleLowerCase() === "catalogue",
   );
-  if (!catalogueColumn) throw new Error("CSV is missing the Catalogue column");
+  const wotquenneColumn = headers.find(
+    (header) => header.trim().toLocaleLowerCase() === "wotquenne",
+  );
+  const helmColumn = headers.find(
+    (header) => header.trim().toLocaleLowerCase() === "helm",
+  );
+  if (!catalogueColumn && system === "CPE" && !wotquenneColumn && !helmColumn) {
+    throw new Error("CPE CSV is missing Wotquenne and Helm catalogue columns");
+  }
+  if (!catalogueColumn && system !== "CPE") {
+    throw new Error("CSV is missing the Catalogue column");
+  }
 
   const preferredTitleColumns =
-    system === "RV" ? ["name", "movement"] : ["title", "name", "movement"];
+    system === "RV" ? ["name"] : ["title", "name", "movement"];
   const titleColumn = preferredTitleColumns
     .map((name) =>
       headers.find((header) => header.trim().toLocaleLowerCase() === name),
@@ -195,20 +307,25 @@ export function composerWorksFromCsv(
   const keyColumn = headers.find(
     (header) => header.trim().toLocaleLowerCase() === "key",
   );
-  if (!titleColumn) throw new Error("CSV is missing a work title column");
+  if (!titleColumn && system !== "RV") {
+    throw new Error("CSV is missing a work title column");
+  }
 
-  return rows.map((fields) => ({
-    fields,
-    catalogue: fields[catalogueColumn],
-    title:
-      fields[titleColumn].trim() ||
-      fields.Name?.trim() ||
-      fields.Movement?.trim() ||
-      fields.Type?.trim() ||
-      "（未命名作品）",
-    type: typeColumn ? fields[typeColumn] : "",
-    key: keyColumn ? fields[keyColumn] : "",
-  }));
+  return rows.map((sourceFields) => {
+    const fields = sourceFields;
+    return {
+      fields,
+      catalogue: catalogueColumn
+        ? fields[catalogueColumn]
+        : [wotquenneColumn, helmColumn]
+            .map((column) => (column ? fields[column].trim() : ""))
+            .filter(Boolean)
+            .join(", "),
+      title: titleColumn ? fields[titleColumn].trim() : "",
+      type: typeColumn ? fields[typeColumn] : "",
+      key: keyColumn ? fields[keyColumn] : "",
+    };
+  });
 }
 
 export async function fetchComposerWorks(

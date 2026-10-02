@@ -2,6 +2,7 @@
 
 import { IconHeart, IconPlaylistAdd, IconPlayerPlay, IconTrash } from "@tabler/icons-react";
 import { CoverArt } from "@/components/cover-art";
+import { cn } from "@/lib/utils";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -22,31 +23,85 @@ import { albumFavoriteKey, trackFavoriteKey } from "@/lib/types";
 interface AlbumGridProps {
   albums: AlbumSummary[];
   emptyMessage?: string;
+  layout?: "grid" | "column-carousel";
+  carouselHeight?: number;
 }
 
 export function AlbumGrid({
   albums,
   emptyMessage = "还没有专辑，先导入音乐文件夹吧",
+  layout = "grid",
+  carouselHeight,
 }: AlbumGridProps) {
   const { openAlbum, openArtist } = useNav();
   const player = usePlayer();
   const { favorites, toggleFavorite, removeTracks } = useLibrary();
+  const carouselCoverSize =
+    layout === "column-carousel" && carouselHeight
+      ? Math.max(96, (carouselHeight - 32) / 2)
+      : undefined;
 
   if (albums.length === 0) {
     return (
-      <p className="px-4 py-12 text-center text-sm text-zinc-500">
+      <p
+        className="px-4 py-12 text-center text-sm text-zinc-500"
+        style={
+          layout === "column-carousel" && carouselHeight
+            ? { height: carouselHeight }
+            : undefined
+        }
+      >
         {emptyMessage}
       </p>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div
+      className={
+        layout === "column-carousel"
+          ? "box-border grid min-h-0 snap-x snap-mandatory grid-flow-col grid-rows-2 content-evenly items-start gap-x-4 gap-y-3 overflow-x-auto overflow-y-hidden pb-2"
+          : "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+      }
+      style={
+        layout === "column-carousel"
+          ? {
+              height: carouselHeight || undefined,
+              gridAutoColumns: carouselCoverSize
+                ? `min(calc((100% - 1rem) / 1.5), ${carouselCoverSize}px)`
+                : "calc((100% - 1rem) / 1.5)",
+            }
+          : undefined
+      }
+      aria-label={
+        layout === "column-carousel"
+          ? "Related albums carousel"
+          : undefined
+      }
+      role={layout === "column-carousel" ? "region" : undefined}
+      tabIndex={layout === "column-carousel" ? 0 : undefined}
+    >
       {albums.map((album) => (
         <ContextMenu key={album.key}>
-          <ContextMenuTrigger>
-            <div className="group flex flex-col gap-2.5">
-          <div className="relative">
+          <ContextMenuTrigger
+            className={cn(
+              layout === "column-carousel" && "w-full snap-start",
+              layout === "grid" && "min-w-0",
+            )}
+          >
+            <div
+              className={cn(
+                "group flex gap-3",
+                layout !== "column-carousel" && "flex-col gap-2.5",
+                layout === "column-carousel" && "flex-col gap-2",
+              )}
+            >
+          <div
+            className={cn(
+              "relative",
+              layout === "column-carousel" && "aspect-square w-full",
+            )}
+          >
             <button
               type="button"
               onClick={() => openAlbum(album.key)}
@@ -57,9 +112,24 @@ export function AlbumGrid({
                 coverId={album.coverId}
                 label={album.album}
                 className="aspect-square w-full rounded-xl shadow-lg shadow-zinc-900/15 transition duration-200 group-hover:brightness-110"
-                labelClassName="text-3xl"
+                labelClassName={
+                  layout === "column-carousel" ? "text-xl" : "text-3xl"
+                }
               />
             </button>
+            {layout === "column-carousel" ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-xl bg-linear-to-t from-black/85 via-black/55 to-transparent px-3 pt-10 pb-3 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                <p className="truncate text-sm font-medium" title={album.album}>
+                  {album.album}
+                </p>
+                <p
+                  className="truncate text-xs text-white/80"
+                  title={album.albumArtist}
+                >
+                  {album.albumArtist}
+                </p>
+              </div>
+            ) : null}
             <button
               type="button"
               aria-label={`播放专辑 ${album.album}`}
@@ -69,18 +139,23 @@ export function AlbumGrid({
               <IconPlayerPlay className="ml-0.5 h-4.5 w-4.5 fill-current" />
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => openAlbum(album.key)}
-            className="min-w-0 text-left"
-          >
-            <p className="truncate text-sm text-zinc-800" title={album.album}>
-              {album.album}
-            </p>
-            <p className="truncate text-xs text-zinc-500" title={album.albumArtist}>
-              {album.albumArtist}
-            </p>
-          </button>
+          {layout === "grid" ? (
+            <button
+              type="button"
+              onClick={() => openAlbum(album.key)}
+              className="min-w-0 text-left"
+            >
+              <p className="truncate text-sm text-zinc-800" title={album.album}>
+                {album.album}
+              </p>
+              <p
+                className="truncate text-xs text-zinc-500"
+                title={album.albumArtist}
+              >
+                {album.albumArtist}
+              </p>
+            </button>
+          ) : null}
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent>

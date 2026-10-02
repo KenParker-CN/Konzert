@@ -430,7 +430,7 @@ const CATALOG_NUMBER_PATTERNS = [
     /*Telemann's*/
     {system: "TWV", pattern: /\bTWV\s+(?:Anh\.\s+)?\d+:[A-Z]*\d+/i},
     /*Bach's*/
-    {system: "BWV", pattern: /\bBWV\s+\d+[A-Z]?/i},
+    {system: "BWV", pattern: /\bBWV\s+\d+(?:-\d+)?[A-Z]?/i},
     /*Vivaldi's*/
     {system: "RV", pattern: /\bRV\s+\d+[A-Z]?/i},
     /*Handel's*/
@@ -438,8 +438,8 @@ const CATALOG_NUMBER_PATTERNS = [
     /*Mozart's*/
     {system: "K", pattern: /\b(?:K|K\.|KV)\s*\d+(?:\/[A-Za-z0-9]+)?\b/i},
     /*CPE Bach's*/
-    {system: "Wq.", pattern: /\bWq\.\s*\d+(?:\/\d+)?\b/i,},
-    {system: "H.", pattern: /\bH\.\s*\d+\b/i,},
+    {system: "Wq.", pattern: /\bWq\.?\s*\d+(?:\/\d+)?\b/i,},
+    {system: "H.", pattern: /\bH\.?\s*\d+(?:\.\d+)?\b/i,},
     /*Buxtehude's*/
     {system: "BuxWV", pattern: /\bBuxWV\s+\d+[A-Z]?/i},
     /*Haydn's*/
@@ -458,6 +458,36 @@ export interface CatalogReference {
     number: string;
     display: string;
     index: number;
+}
+
+export function catalogReferenceDisplay(reference: CatalogReference): string {
+    if (reference.system === "Wq." || reference.system === "H.") {
+        return `${reference.system} ${reference.number}`;
+    }
+    return reference.display;
+}
+
+export function catalogNumbersMatch(
+    system: string,
+    first: string,
+    second: string,
+): boolean {
+    if (system === "BWV") {
+        const matchesRange = (range: string, number: string) => {
+            const rangeMatch = range.match(/^(\d+)-(\d+)$/);
+            if (!rangeMatch || !/^\d+$/.test(number)) return false;
+            const value = Number(number);
+            return value >= Number(rangeMatch[1]) && value <= Number(rangeMatch[2]);
+        };
+        return (
+            first.toLocaleLowerCase() === second.toLocaleLowerCase() ||
+            matchesRange(first, second) ||
+            matchesRange(second, first)
+        );
+    }
+    return system === "TWV"
+        ? first === second
+        : first.toLocaleLowerCase() === second.toLocaleLowerCase();
 }
 
 export function catalogReferencesOf(title: string): CatalogReference[] {
@@ -488,7 +518,13 @@ export function catalogReferencesOf(title: string): CatalogReference[] {
         const display = match[0].trim();
         const number = display
             .replace(
-                system === "K" ? /^(?:K\.|KV)\s*/i : new RegExp(`^${system}\\s*`, "i"),
+                system === "K"
+                    ? /^(?:KV|K\.?)\s*/i
+                    : system === "Wq."
+                      ? /^Wq\.?\s*/i
+                      : system === "H."
+                        ? /^H\.?\s*/i
+                        : new RegExp(`^${system}\\s*`, "i"),
                 "",
             )
             .trim();
@@ -562,7 +598,9 @@ export function workIdentityKeyOf(track: Track): string | null {
     const catalogs = catalogReferencesOf(track.title);
     if (composer && catalogs.length > 0) {
         return `composer:${composer}|catalog:${catalogs
-            .map((catalog) => `${catalog.system.toLowerCase()}:${catalog.number.toLowerCase()}`)
+            .map((catalog) =>
+                `${catalog.system.toLowerCase()}:${catalog.system === "TWV" ? catalog.number : catalog.number.toLowerCase()}`,
+            )
             .join("|")}`;
     }
 

@@ -74,7 +74,7 @@ function dominantColorOf(imageUrl: string): Promise<string | null> {
 }
 
 export function AlbumDetail({album}: { album: AlbumSummary }) {
-    const {closeAlbum, openArtist, backLabel} = useNav();
+    const {closeAlbum, openArtist, openComposer, backLabel} = useNav();
     const player = usePlayer();
     const {favorites, removeTracks, toggleFavorite} = useLibrary();
     const [isCoverOpen, setIsCoverOpen] = useState(false);
@@ -441,7 +441,22 @@ export function AlbumDetail({album}: { album: AlbumSummary }) {
                                                             />
                                                             {section.composer ? (
                                                                 <span className="font-normal text-zinc-500">
-                                                                    {" "}· {section.composer}
+                                                                    {" "}·{" "}
+                                                                    {section.composer.split(";").map((composer, index) => {
+                                                                        const name = composer.trim();
+                                                                        return (
+                                                                            <span key={`${name}-${index}`}>
+                                                                                {index > 0 ? "; " : null}
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => openComposer(name)}
+                                                                                    className="hover:text-app-accent hover:underline hover:underline-offset-2"
+                                                                                >
+                                                                                    {name}
+                                                                                </button>
+                                                                            </span>
+                                                                        );
+                                                                    })}
                                                                 </span>
                                                             ) : null}
                                                         </h2>

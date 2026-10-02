@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { catalogReferencesOf } from "@/lib/catalog";
+import { catalogReferenceDisplay, catalogReferencesOf } from "@/lib/catalog";
 import { useNav } from "@/lib/nav-provider";
 
 export function CatalogTitle({
@@ -60,7 +60,7 @@ export function CatalogTitle({
           openWork({ ...reference, composer });
         }}
       >
-        {reference.display}
+        {catalogReferenceDisplay(reference)}
       </button>,
     );
     cursor = reference.index + reference.display.length;

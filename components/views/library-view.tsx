@@ -59,6 +59,10 @@ export function LibraryView() {
     const [artistSortDir, setArtistSortDir] = useState<SortDir>(
         ARTIST_SORT_DEFAULT_DIR.name,
     );
+    const [composerSort, setComposerSort] = useState<ArtistSort>("duration");
+    const [composerSortDir, setComposerSortDir] = useState<SortDir>(
+        ARTIST_SORT_DEFAULT_DIR.duration,
+    );
     const recentAlbumsRef = useRef<HTMLDivElement>(null);
     const matched = useMemo(() => searchTracks(tracks, query), [tracks, query]);
     const visibleTracks = useMemo(
@@ -89,8 +93,8 @@ export function LibraryView() {
         [matched, artistSort, artistSortDir],
     );
     const composerGroups = useMemo(
-        () => sortArtists(groupComposers(matched), artistSort, artistSortDir),
-        [matched, artistSort, artistSortDir],
+        () => sortArtists(groupComposers(matched), composerSort, composerSortDir),
+        [matched, composerSort, composerSortDir],
     );
 
     const pageCount = Math.max(
@@ -276,7 +280,7 @@ export function LibraryView() {
                             }
                         />
                     ) : null}
-                    {view === "artists" || view === "composers" ? (
+                    {view === "artists" ? (
                         <SortControl
                             value={artistSort}
                             labels={ARTIST_SORT_LABELS}
@@ -287,6 +291,22 @@ export function LibraryView() {
                             }}
                             onToggleDir={() =>
                                 setArtistSortDir((dir) => (dir === "asc" ? "desc" : "asc"))
+                            }
+                        />
+                    ) : null}
+                    {view === "composers" ? (
+                        <SortControl
+                            value={composerSort}
+                            labels={ARTIST_SORT_LABELS}
+                            dir={composerSortDir}
+                            onChange={(value) => {
+                                setComposerSort(value);
+                                setComposerSortDir(ARTIST_SORT_DEFAULT_DIR[value]);
+                            }}
+                            onToggleDir={() =>
+                                setComposerSortDir((dir) =>
+                                    dir === "asc" ? "desc" : "asc",
+                                )
                             }
                         />
                     ) : null}
@@ -487,7 +507,7 @@ function ArtistGrid({artists}: ArtistGridProps) {
     }
 
     return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
             {artists.map((artist) => {
                 return (
                     <button
@@ -506,9 +526,6 @@ function ArtistGrid({artists}: ArtistGridProps) {
                         </Avatar>
                         <span className="w-full truncate text-sm text-zinc-800">
                             {artist.name}
-                        </span>
-                        <span className="text-xs text-zinc-500">
-                            {artist.tracks.length} 首 · {formatDuration(artist.duration)}
                         </span>
                     </button>
                 );
