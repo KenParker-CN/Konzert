@@ -51,6 +51,18 @@ test("maps supported composer names to their catalogue systems", () => {
     system: "BWV",
     fileName: "BWV.csv",
   });
+  assert.deepEqual(composerWorksCatalogOf("George Frideric Handel"), {
+    system: "HWV",
+    fileName: "HWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Georg Friedrich Händel"), {
+    system: "HWV",
+    fileName: "HWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Handel, George Frideric"), {
+    system: "HWV",
+    fileName: "HWV.csv",
+  });
   assert.equal(composerWorksCatalogOf("Leopold Mozart"), null);
   assert.equal(composerWorksCatalogOf("Johann Christian Bach"), null);
 });
@@ -97,6 +109,11 @@ test("maps catalogue CSV references to the matching track catalogue system", () 
     "Catalogue,Title,Type,Key\r\nBWV 1,Wie schön leuchtet der Morgenstern,Cantata,F major\r\n",
     "BWV",
   );
+  const [handelWork] = composerWorksFromCsv(
+    "SORT,Opus,Catalogue,Date,Title,Type,Key,Movements,Instrumentation,Note\r\n" +
+      "1,,HWV 1,1704,Almira,Opera,,,Orchestra,\r\n",
+    "HWV",
+  );
 
   assert.deepEqual(
     catalogReferenceOfComposerWork(mozartWork, {
@@ -122,6 +139,15 @@ test("maps catalogue CSV references to the matching track catalogue system", () 
   assert.equal(bachWork.title, "Wie schön leuchtet der Morgenstern");
   assert.equal(bachWork.type, "Cantata");
   assert.equal(bachWork.key, "F major");
+  assert.deepEqual(
+    catalogReferenceOfComposerWork(handelWork, {
+      system: "HWV",
+      fileName: "HWV.csv",
+    }),
+    { system: "HWV", number: "1", display: "HWV 1", index: 0 },
+  );
+  assert.equal(handelWork.fields.Date, "1704");
+  assert.equal(handelWork.fields.Instrumentation, "Orchestra");
   assert.equal(
     catalogReferenceOfComposerWork(mozartWork, {
       system: "RV",

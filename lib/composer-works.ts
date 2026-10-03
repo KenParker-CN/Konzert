@@ -1,6 +1,12 @@
 import { catalogReferencesOf } from "./catalog";
 
-export type ComposerWorkSystem = "KV" | "TWV" | "RV" | "CPE" | "BWV";
+export type ComposerWorkSystem =
+  | "KV"
+  | "TWV"
+  | "RV"
+  | "CPE"
+  | "BWV"
+  | "HWV";
 
 export interface ComposerWorksCatalog {
   system: ComposerWorkSystem;
@@ -148,6 +154,20 @@ const CATALOGS: Array<{
       "bach j s",
       "js bach",
       "bach js",
+    ],
+  },
+  {
+    system: "HWV",
+    aliases: [
+      "handel",
+      "george frideric handel",
+      "handel george frideric",
+      "georg friedrich handel",
+      "handel georg friedrich",
+      "g f handel",
+      "handel g f",
+      "gf handel",
+      "handel gf",
     ],
   },
 ];

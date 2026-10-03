@@ -158,6 +158,21 @@ test("recognizes BWV catalogue numbers and grouped number ranges", () => {
   assert.equal(catalogNumbersMatch("BWV", "1090-1120", "1121"), false);
 });
 
+test("recognizes Handel HWV catalogue numbers", () => {
+  assert.deepEqual(catalogReferenceOf("HWV 1: Almira"), {
+    system: "HWV",
+    number: "1",
+    display: "HWV 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("HWV 55A"), {
+    system: "HWV",
+    number: "55A",
+    display: "HWV 55A",
+    index: 0,
+  });
+});
+
 test("does not group titles without a valid leading work prefix", () => {
   assert.equal(workKeyOf("No colon title"), null);
   assert.equal(workTitleOf("No colon title"), "No colon title");
