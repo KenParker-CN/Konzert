@@ -1,6 +1,6 @@
 "use client";
 
-import {useMemo, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {IconArrowDown, IconArrowUp, IconChevronLeft, IconChevronRight, IconPlayerPlay, IconSearch, IconArrowsShuffle, IconPiano, IconX,} from "@tabler/icons-react";
 import {AlbumDetail} from "@/components/album-detail";
 import {ArtistDetail} from "@/components/artist-detail";
@@ -64,6 +64,7 @@ export function LibraryView() {
         ARTIST_SORT_DEFAULT_DIR.duration,
     );
     const recentAlbumsRef = useRef<HTMLDivElement>(null);
+    const recentAlbumsPausedRef = useRef(false);
     const matched = useMemo(() => searchTracks(tracks, query), [tracks, query]);
     const visibleTracks = useMemo(
         () => sortTracks(matched, sort, sortDir),
@@ -88,6 +89,24 @@ export function LibraryView() {
                 .map(({album}) => album),
         [albums],
     );
+
+    useEffect(() => {
+        if (view !== "albums" || query || recentAlbums.length < 2) return;
+
+        const interval = window.setInterval(() => {
+            const container = recentAlbumsRef.current;
+            if (!container || recentAlbumsPausedRef.current) return;
+
+            const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 8;
+            container.scrollTo({
+                left: atEnd ? 0 : container.scrollLeft + 320,
+                behavior: "smooth",
+            });
+        }, 3500);
+
+        return () => window.clearInterval(interval);
+    }, [view, query, recentAlbums.length]);
+
     const artistGroups = useMemo(
         () => sortArtists(groupArtists(matched), artistSort, artistSortDir),
         [matched, artistSort, artistSortDir],
@@ -163,6 +182,12 @@ export function LibraryView() {
                     </div>
                     <div
                         ref={recentAlbumsRef}
+                        onMouseEnter={() => { recentAlbumsPausedRef.current = true; }}
+                        onMouseLeave={() => { recentAlbumsPausedRef.current = false; }}
+                        onFocusCapture={() => { recentAlbumsPausedRef.current = true; }}
+                        onBlurCapture={() => { recentAlbumsPausedRef.current = false; }}
+                        onTouchStart={() => { recentAlbumsPausedRef.current = true; }}
+                        onTouchEnd={() => { recentAlbumsPausedRef.current = false; }}
                         className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
                     >
                         {recentAlbums.map((album) => (
