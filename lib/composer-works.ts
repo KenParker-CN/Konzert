@@ -6,11 +6,12 @@ export type ComposerWorkSystem =
   | "RV"
   | "CPE"
   | "BWV"
-  | "HWV";
+  | "HWV"
+  | "Hob.";
 
 export interface ComposerWorksCatalog {
   system: ComposerWorkSystem;
-  fileName: `${ComposerWorkSystem}.csv`;
+  fileName: string;
 }
 
 export interface ComposerWork {
@@ -170,10 +171,22 @@ const CATALOGS: Array<{
       "handel gf",
     ],
   },
+  {
+    system: "Hob.",
+    aliases: [
+      "haydn",
+      "joseph haydn",
+      "franz joseph haydn",
+      "haydn joseph",
+      "haydn franz joseph",
+      "j haydn",
+      "haydn j",
+    ],
+  },
 ];
 
 const DATA_BASE_URL =
-  "https://raw.githubusercontent.com/KenParker-CN/konzert-public-data/main";
+  "https://raw.githubusercontent.com/KenParker-CN/konzert-public-data/main/csv";
 
 function normalizeComposerName(value: string): string {
   return value
@@ -198,7 +211,7 @@ export function composerWorksCatalogOf(
   );
 
   return catalog
-    ? { system: catalog.system, fileName: `${catalog.system}.csv` }
+    ? { system: catalog.system, fileName: `${catalog.system.replace('.', '')}.csv` }
     : null;
 }
 
