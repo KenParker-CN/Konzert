@@ -8,7 +8,7 @@ import {ComposerDetail} from "@/components/composer-detail";
 import {RecordingDetail} from "@/components/recording-detail";
 import {WorkDetail} from "@/components/work-detail";
 import {AlbumGrid} from "@/components/album-grid";
-import {CoverArt, useCoverUrl} from "@/components/cover-art";
+import {CoverArt} from "@/components/cover-art";
 import {EmptyState} from "@/components/empty-state";
 import {TrackList} from "@/components/track-list";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
@@ -63,8 +63,8 @@ export function LibraryView() {
     const [composerSortDir, setComposerSortDir] = useState<SortDir>(
         ARTIST_SORT_DEFAULT_DIR.duration,
     );
+    const recentAlbumsRef = useRef<HTMLDivElement>(null);
     const recentAlbumsPausedRef = useRef(false);
-    const [activeRecentAlbum, setActiveRecentAlbum] = useState(0);
     const matched = useMemo(() => searchTracks(tracks, query), [tracks, query]);
     const visibleTracks = useMemo(
         () => sortTracks(matched, sort, sortDir),
@@ -94,19 +94,18 @@ export function LibraryView() {
         if (view !== "albums" || query || recentAlbums.length < 2) return;
 
         const interval = window.setInterval(() => {
-            if (recentAlbumsPausedRef.current) return;
-            setActiveRecentAlbum((current) => (current + 1) % recentAlbums.length);
-        }, 5000);
+            const container = recentAlbumsRef.current;
+            if (!container || recentAlbumsPausedRef.current) return;
+
+            const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 8;
+            container.scrollTo({
+                left: atEnd ? 0 : container.scrollLeft + container.clientWidth,
+                behavior: "smooth",
+            });
+        }, 3500);
 
         return () => window.clearInterval(interval);
     }, [view, query, recentAlbums.length]);
-
-    const activeRecentAlbumIndex = activeRecentAlbum % Math.max(recentAlbums.length, 1);
-    const activeAlbum = recentAlbums[activeRecentAlbumIndex];
-    const activeAlbumCoverUrl = useCoverUrl(activeAlbum?.coverId ?? null);
-    const selectRecentAlbum = (index: number) => {
-        setActiveRecentAlbum((index + recentAlbums.length) % recentAlbums.length);
-    };
 
     const artistGroups = useMemo(
         () => sortArtists(groupArtists(matched), artistSort, artistSortDir),
@@ -158,68 +157,66 @@ export function LibraryView() {
 
     return (
         <div className="flex flex-col gap-5">
-            {view === "albums" && !query && activeAlbum ? (
-                <section
-                    aria-label="最近添加的专辑"
-                    onMouseEnter={() => { recentAlbumsPausedRef.current = true; }}
-                    onMouseLeave={() => { recentAlbumsPausedRef.current = false; }}
-                    onFocusCapture={() => { recentAlbumsPausedRef.current = true; }}
-                    onBlurCapture={() => { recentAlbumsPausedRef.current = false; }}
-                    onTouchStart={() => { recentAlbumsPausedRef.current = true; }}
-                    onTouchEnd={() => { recentAlbumsPausedRef.current = false; }}
-                    className="relative isolate min-h-72 overflow-hidden rounded-2xl bg-zinc-900 px-6 py-8 text-white shadow-lg sm:min-h-80"
-                >
-                    {activeAlbumCoverUrl ? (
-                        <div
-                            aria-hidden
-                            className="absolute inset-0 scale-110 bg-cover bg-center opacity-45 blur-2xl"
-                            style={{backgroundImage: `url(${activeAlbumCoverUrl})`}}
-                        />
-                    ) : null}
-                    <div aria-hidden className="absolute inset-0 bg-linear-to-r from-zinc-950/80 via-zinc-900/45 to-zinc-950/80" />
-                    <button
-                        type="button"
-                        aria-label="查看上一张最近添加的专辑"
-                        onClick={() => selectRecentAlbum(activeRecentAlbumIndex - 1)}
-                        className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full p-2 text-white/75 transition hover:bg-white/15 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                    >
-                        <IconChevronLeft className="h-7 w-7" />
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="查看下一张最近添加的专辑"
-                        onClick={() => selectRecentAlbum(activeRecentAlbumIndex + 1)}
-                        className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full p-2 text-white/75 transition hover:bg-white/15 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                    >
-                        <IconChevronRight className="h-7 w-7" />
-                    </button>
-                    <div className="relative z-10 flex h-full min-h-56 flex-col items-center justify-center text-center">
-                        <button
-                            type="button"
-                            onClick={() => navigateToAlbum(activeAlbum.key)}
-                            className="group flex flex-col items-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-                        >
-                            <CoverArt
-                                coverId={activeAlbum.coverId}
-                                label={activeAlbum.album}
-                                className="h-40 w-40 rounded-md shadow-2xl shadow-black/40 transition duration-300 group-hover:scale-105 sm:h-48 sm:w-48"
-                                labelClassName="text-4xl"
-                            />
-                            <span className="mt-3 max-w-72 truncate text-base font-semibold">{activeAlbum.album}</span>
-                            <span className="max-w-72 truncate text-sm text-white/75">{activeAlbum.albumArtist}</span>
-                        </button>
-                        <div className="mt-5 flex items-center gap-2" aria-label={`第 ${activeRecentAlbumIndex + 1} 张，共 ${recentAlbums.length} 张`}>
-                            {recentAlbums.map((album, index) => (
-                                <button
-                                    key={album.key}
-                                    type="button"
-                                    aria-label={`切换到 ${album.album}`}
-                                    aria-current={index === activeRecentAlbumIndex ? "true" : undefined}
-                                    onClick={() => selectRecentAlbum(index)}
-                                    className={`h-1.5 rounded-full transition ${index === activeRecentAlbumIndex ? "w-5 bg-white" : "w-1.5 bg-white/45 hover:bg-white/75"}`}
-                                />
-                            ))}
+            {view === "albums" && !query && recentAlbums.length > 0 ? (
+                <section aria-label="最近添加的专辑" className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-medium text-zinc-800">最近添加</h2>
+                        <div className="flex gap-1">
+                            <button
+                                type="button"
+                                aria-label="向左滚动最近添加的专辑"
+                                onClick={() => {
+                                    const container = recentAlbumsRef.current;
+                                    container?.scrollBy({left: -container.clientWidth, behavior: "smooth"});
+                                }}
+                                className="rounded-full border border-zinc-200 p-1.5 text-zinc-500 transition hover:bg-zinc-950/5 hover:text-zinc-800"
+                            >
+                                <IconChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="向右滚动最近添加的专辑"
+                                onClick={() => {
+                                    const container = recentAlbumsRef.current;
+                                    container?.scrollBy({left: container.clientWidth, behavior: "smooth"});
+                                }}
+                                className="rounded-full border border-zinc-200 p-1.5 text-zinc-500 transition hover:bg-zinc-950/5 hover:text-zinc-800"
+                            >
+                                <IconChevronRight className="h-4 w-4" />
+                            </button>
                         </div>
+                    </div>
+                    <div
+                        ref={recentAlbumsRef}
+                        onMouseEnter={() => { recentAlbumsPausedRef.current = true; }}
+                        onMouseLeave={() => { recentAlbumsPausedRef.current = false; }}
+                        onFocusCapture={() => { recentAlbumsPausedRef.current = true; }}
+                        onBlurCapture={() => { recentAlbumsPausedRef.current = false; }}
+                        onTouchStart={() => { recentAlbumsPausedRef.current = true; }}
+                        onTouchEnd={() => { recentAlbumsPausedRef.current = false; }}
+                        className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
+                    >
+                        {recentAlbums.map((album) => (
+                            <button
+                                key={album.key}
+                                type="button"
+                                onClick={() => navigateToAlbum(album.key)}
+                                className="group w-[calc((100%-1rem)/2)] shrink-0 text-left sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/4)]"
+                            >
+                                <CoverArt
+                                    coverId={album.coverId}
+                                    label={album.album}
+                                    className="aspect-square w-full rounded-xl shadow-md shadow-zinc-900/10 transition group-hover:brightness-110"
+                                    labelClassName="text-2xl"
+                                />
+                                <p className="mt-2 truncate text-sm text-zinc-800" title={album.album}>
+                                    {album.album}
+                                </p>
+                                <p className="truncate text-xs text-zinc-500" title={album.albumArtist}>
+                                    {album.albumArtist}
+                                </p>
+                            </button>
+                        ))}
                     </div>
                 </section>
             ) : null}

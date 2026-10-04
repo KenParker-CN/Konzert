@@ -77,7 +77,7 @@ export function ComposerDetail({composerName}: {composerName: string}) {
             disabled={composerTracks.length === 0}
             className="flex shrink-0 items-center gap-2 rounded-full bg-app-accent px-5 py-2 text-sm font-medium text-white transition hover:brightness-90 disabled:opacity-40"
           >
-            <IconPlayerPlay className="h-4 w-4 fill-current" /            >
+            <IconPlayerPlay className="h-4 w-4 fill-current" />
               播放
             </button>
         </div>

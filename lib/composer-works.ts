@@ -28,6 +28,17 @@ export interface ComposerWorkFilters {
   key: string;
 }
 
+/** Haydn's source CSV includes three indexing columns that are not work details. */
+export function isComposerWorkFieldVisible(
+  field: string,
+  system: ComposerWorkSystem,
+): boolean {
+  if (system !== "Hob.") return true;
+  return !["sort", "series", "no."].includes(
+    field.trim().toLocaleLowerCase(),
+  );
+}
+
 export const TWV_CATEGORIES = [
   { id: "sacred-vocal", label: "TWV 1-15 宗教声乐作品", from: 1, to: 15 },
   { id: "secular-vocal", label: "TWV 20-25 世俗声乐作品", from: 20, to: 25 },
@@ -215,7 +226,10 @@ export function composerWorksCatalogOf(
     : null;
 }
 
-export function parseCsv(text: string): Array<Record<string, string>> {
+export function parseCsv(
+  text: string,
+  options: { emptyHeaderNames?: Record<number, string> } = {},
+): Array<Record<string, string>> {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -285,9 +299,12 @@ export function parseCsv(text: string): Array<Record<string, string>> {
 
   if (rows.length === 0) throw new Error("CSV is empty");
 
-  const headers = rows[0].map((header, index) =>
-    index === 0 ? header.replace(/^\uFEFF/, "").trim() : header.trim(),
-  );
+  const headers = rows[0].map((header, index) => {
+    const normalized = index === 0
+      ? header.replace(/^\uFEFF/, "").trim()
+      : header.trim();
+    return normalized || options.emptyHeaderNames?.[index] || "";
+  });
   if (headers.some((header) => !header)) {
     throw new Error("CSV contains an empty column name");
   }
@@ -309,7 +326,11 @@ export function composerWorksFromCsv(
   csv: string,
   system: ComposerWorkSystem,
 ): ComposerWork[] {
-  const rows = parseCsv(csv);
+  const rows = parseCsv(csv, {
+    // The upstream Haydn (Hoboken) CSV leaves the column above values such as
+    // "Hob. I:1" unnamed. Treat that column as the catalogue reference.
+    emptyHeaderNames: system === "Hob." ? { 3: "Catalogue" } : undefined,
+  });
   const headers = Object.keys(rows[0] ?? {});
   const catalogueColumn = headers.find(
     (header) => header.trim().toLocaleLowerCase() === "catalogue",

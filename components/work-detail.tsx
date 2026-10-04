@@ -7,6 +7,7 @@ import {
   catalogReferencesOfComposerWork,
   composerWorksCatalogOf,
   fetchComposerWorks,
+  isComposerWorkFieldVisible,
   type ComposerWork,
 } from "@/lib/composer-works";
 import { useLibrary } from "@/lib/library-provider";
@@ -112,7 +113,13 @@ export function WorkDetail({
       return matchesCatalog && track.composer.trim().toLowerCase() ===
         work.composer.trim().toLowerCase();
     })
-    .sort((a, b) => compareNames(a.title, b.title));
+    .sort((a, b) =>
+      compareNames(a.album, b.album) ||
+      (a.discNo ?? 1) - (b.discNo ?? 1) ||
+      (a.trackNo ?? Number.MAX_SAFE_INTEGER) -
+        (b.trackNo ?? Number.MAX_SAFE_INTEGER) ||
+      compareNames(a.title, b.title),
+    );
   const [page, setPage] = useState(1);
   const pageCount = Math.max(1, Math.ceil(recordings.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -174,8 +181,10 @@ export function WorkDetail({
               <dl className="grid grid-cols-[minmax(6rem,0.35fr)_minmax(0,1fr)] gap-x-4 text-sm">
                 {Object.entries(catalogWork.work.fields)
                   .filter(
-                    ([field]) =>
-                      field.trim().toLocaleLowerCase() !== "catalogue",
+                    ([field, value]) =>
+                      field.trim().toLocaleLowerCase() !== "catalogue" &&
+                      isComposerWorkFieldVisible(field, worksCatalog.system) &&
+                      value.trim().length > 0,
                   )
                   .map(([field, value]) => (
                     <div key={field} className="contents">

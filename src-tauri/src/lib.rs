@@ -1,3 +1,21 @@
+use std::path::PathBuf;
+use tauri::Manager;
+use tauri_plugin_fs::FsExt;
+
+/// Re-grant the previously selected music directory after an app restart.
+/// Dialog-granted filesystem scopes are in-memory and are not restored automatically.
+#[tauri::command]
+fn restore_monitor_folder_scope(app: tauri::AppHandle, path: String) -> Result<(), String> {
+  let directory = PathBuf::from(path);
+  app.fs_scope()
+    .allow_directory(&directory, true)
+    .map_err(|error| error.to_string())?;
+  app.asset_protocol_scope()
+    .allow_directory(&directory, true)
+    .map_err(|error| error.to_string())?;
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -8,6 +26,7 @@ pub fn run() {
     // 文件读取：扫描音乐目录、按需读取音频文件内容。
     // watch 功能用于检测外部元数据变更。
     .plugin(tauri_plugin_fs::init())
+    .invoke_handler(tauri::generate_handler![restore_monitor_folder_scope])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

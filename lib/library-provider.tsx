@@ -17,6 +17,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { groupAlbums } from "./catalog";
 import {
   KV_FAVORITES,
@@ -245,10 +246,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   /** 启动文件系统监听 */
   useEffect(() => {
     if (!FileWatcher.isSupported() || !ready) return;
-    if (settings.monitorFolder?.kind !== "path") return;
+    const monitorFolder = settings.monitorFolder;
+    if (monitorFolder?.kind !== "path") return;
 
     const watcher = new FileWatcher({
-      paths: [settings.monitorFolder.path],
+      paths: [monitorFolder.path],
       onEvent: handleFileChange,
       onError: (error) => {
         console.error("File watcher error:", error);
@@ -257,9 +259,22 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
     fileWatcherRef.current = watcher;
 
-    void watcher.start();
+    let cancelled = false;
+    void (async () => {
+      try {
+        // Native dialog grants are transient; restore the saved folder's scope
+        // before starting its watcher on subsequent app launches.
+        await invoke("restore_monitor_folder_scope", {
+          path: monitorFolder.path,
+        });
+        if (!cancelled) await watcher.start();
+      } catch (error) {
+        console.error("Unable to restore monitored folder access:", error);
+      }
+    })();
 
     return () => {
+      cancelled = true;
       void watcher.stop();
       fileWatcherRef.current = null;
     };

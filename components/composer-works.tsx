@@ -15,6 +15,7 @@ import {
   composerWorksCatalogOf,
   filterComposerWorks,
   fetchComposerWorks,
+  isComposerWorkFieldVisible,
   TWV_CATEGORIES,
   twvCategoryOfComposerWork,
   type ComposerWork,
@@ -404,19 +405,24 @@ function ComposerWorksCatalog({
                 {selectedWork.title || "作品目录记录"}
               </DialogDescription>
               <dl className="grid grid-cols-[minmax(6rem,0.35fr)_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm">
-                {Object.entries(selectedWork.fields).map(([field, value]) => (
-                  <div
-                    key={field}
-                    className="contents border-b border-zinc-100 last:border-0"
-                  >
-                    <dt className="border-b border-zinc-100 py-2 font-medium text-zinc-500">
-                      {field}
-                    </dt>
-                    <dd className="min-w-0 border-b border-zinc-100 py-2 whitespace-pre-wrap break-words text-zinc-800">
-                      {value || "—"}
-                    </dd>
-                  </div>
-                ))}
+                {Object.entries(selectedWork.fields)
+                  .filter(([field, value]) =>
+                    isComposerWorkFieldVisible(field, catalog.system) &&
+                    value.trim().length > 0,
+                  )
+                  .map(([field, value]) => (
+                    <div
+                      key={field}
+                      className="contents border-b border-zinc-100 last:border-0"
+                    >
+                      <dt className="border-b border-zinc-100 py-2 font-medium text-zinc-500">
+                        {field}
+                      </dt>
+                      <dd className="min-w-0 border-b border-zinc-100 py-2 whitespace-pre-wrap break-words text-zinc-800">
+                        {value || "—"}
+                      </dd>
+                    </div>
+                  ))}
               </dl>
               <a
                 href={`https://github.com/KenParker-CN/konzert-public-data/blob/main/${catalog.fileName}`}
