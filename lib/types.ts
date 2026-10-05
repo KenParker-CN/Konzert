@@ -20,7 +20,9 @@ export type AudioOrigin =
       relativePath?: string;
     }
   /** 仅存在于当前会话内存中的文件（拖拽、<input type="file">）。 */
-  | { kind: "memory"; key: string };
+  | { kind: "memory"; key: string }
+  /** 随应用一起打包的静态资源（public/ 下的内置示例音频），由前端直接提供。 */
+  | { kind: "bundled"; url: string };
 
 /** 发行信息。tag 中很少有完整日期，往往只有年份；
    * 若有完整日期则优先保留，否则仅保留年份，全无时为 null。

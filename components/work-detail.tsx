@@ -8,6 +8,7 @@ import {
   composerWorksCatalogOf,
   fetchComposerWorks,
   isComposerWorkFieldVisible,
+  opusNumbersOfComposerWork,
   type ComposerWork,
 } from "@/lib/composer-works";
 import { useLibrary } from "@/lib/library-provider";
@@ -49,6 +50,11 @@ export function WorkDetail({
       (works) => {
         const matchingWork =
           works.find((entry) => {
+            if (work.system === "Op.") {
+              return opusNumbersOfComposerWork(entry).some((number) =>
+                catalogNumbersMatch(work.system, number, work.number),
+              );
+            }
             const references = catalogReferencesOfComposerWork(
               entry,
               worksCatalog,

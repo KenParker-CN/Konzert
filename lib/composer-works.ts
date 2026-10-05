@@ -111,6 +111,17 @@ export function catalogReferencesOfComposerWork(
   );
 }
 
+/** Opus references are carried in a separate CSV column for some catalogues. */
+export function opusNumbersOfComposerWork(work: ComposerWork): string[] {
+  const value = Object.entries(work.fields).find(
+    ([field]) => field.trim().toLocaleLowerCase() === "opus",
+  )?.[1];
+  if (!value) return [];
+  return catalogReferencesOf(value)
+    .filter(({ system }) => system === "Op.")
+    .map(({ number }) => number);
+}
+
 const CATALOGS: Array<{
   system: ComposerWorkSystem;
   aliases: string[];

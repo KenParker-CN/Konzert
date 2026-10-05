@@ -1,10 +1,11 @@
 /**
  * 音频来源解析：把「记录下来的文件来源」还原成可播放 URL 或可解析的 File。
  *
- * 支持三种来源：
+ * 支持四种来源：
  * - Tauri：绝对路径，播放走 asset 协议，读取走 fs 插件；
  * - 浏览器：File System Access 句柄（可持久化，重启后重新申请授权）；
- * - 内存：拖拽 / <input type="file"> 选中的文件，只在当前会话有效。
+ * - 内存：拖拽 / <input type="file"> 选中的文件，只在当前会话有效；
+ * - 内置：随应用打包的 public 静态资源，直接用 URL 播放/读取。
  */
 
 import { convertFileSrc, isTauri } from "@tauri-apps/api/core";
@@ -132,6 +133,18 @@ export async function readOriginFile(
     return origin.handle.getFile();
   }
 
+  if (origin.kind === "bundled") {
+    const response = await fetch(origin.url);
+    if (!response.ok) {
+      throw new Error(
+        `无法读取内置文件《${fileName}》（HTTP ${response.status}）`,
+      );
+    }
+    return new File([await response.blob()], fileName, {
+      type: mimeTypeForName(fileName),
+    });
+  }
+
   if (!isTauriRuntime()) {
     throw new Error("当前环境不支持直接读取本地路径");
   }
@@ -157,6 +170,11 @@ export async function createPlaybackSource(
       throw new Error("当前环境不支持直接播放本地路径");
     }
     return { url: convertFileSrc(track.origin.path), release: () => {} };
+  }
+
+  // 内置资源由应用自身提供，可直接交给 <audio>，无需再走 blob。
+  if (!forceDecode && track.origin.kind === "bundled") {
+    return { url: track.origin.url, release: () => {} };
   }
 
   const file = await readOriginFile(track.origin, track.fileName);

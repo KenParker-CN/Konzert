@@ -45,6 +45,7 @@ import {
   scanFiles,
   type DirectorySource,
 } from "./scan";
+import { importDemoTrack } from "./demo";
 import {
   ensureDirectoryReadPermission,
   registerMemoryFiles,
@@ -318,6 +319,17 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           void saveKv(KV_HISTORY, normalizedHistory);
         }
         setSettings(normalizeSettings(storedSettings));
+        // 内置示例音频：曲库里没有就自动导入，用户无需手动操作。
+        // 失败（导出产物里缺少该文件等）不应影响曲库本身的载入。
+        try {
+          const demoTracks = await importDemoTrack(storedTracks);
+          if (demoTracks.length > 0) {
+            await saveTracks(demoTracks);
+            if (!cancelled) setTracks([...storedTracks, ...demoTracks]);
+          }
+        } catch (caught) {
+          console.warn("Unable to import the bundled demo track:", caught);
+        }
       } catch (caught) {
         if (!cancelled) {
           setError(

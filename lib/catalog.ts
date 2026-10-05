@@ -436,7 +436,9 @@ const CATALOG_NUMBER_PATTERNS = [
     /*Handel's*/
     {system: "HWV", pattern: /\bHWV\s+\d+[A-Z]?/i},
     /*Mozart's*/
-    {system: "K", pattern: /\b(?:K|K\.|KV)\s*\d+(?:\/[A-Za-z0-9]+)?\b/i},
+    {system: "K", pattern: /\b(?:K|K\.|KV)\s*\d+(?:[A-Za-z]+|\/[A-Za-z0-9]+)?\b/i},
+    /*Opus numbers*/
+    {system: "Op.", pattern: /\bOp(?:us)?\.?\s*(\d+)(?:(?:\s*,?\s*No\.?\s*(\d+))|(?:\s*\/\s*(\d+)))?/i},
     /*CPE Bach's*/
     {system: "Wq.", pattern: /\bWq\.?\s*\d+(?:\/\d+)?\b/i,},
     {system: "H.", pattern: /\bH\.?\s*\d+(?:\.\d+)?\b/i,},
@@ -444,10 +446,6 @@ const CATALOG_NUMBER_PATTERNS = [
     {system: "BuxWV", pattern: /\bBuxWV\s+\d+[A-Z]?/i},
     /*Haydn's*/
     {system: "Hob.", pattern: /\bHob\.\s*[IVXLCDM]+[a-z]?:\d+\b/i},
-    /*Tartini's*/
-    {system: "D.", pattern: /\bD\.\s*\d+\b/i,},
-    /*Graupner's*/
-    {system: "GWV", pattern: /\bGWV\s+\d+[A-Z]?/i},
 
 
 
@@ -461,6 +459,11 @@ export interface CatalogReference {
 }
 
 export function catalogReferenceDisplay(reference: CatalogReference): string {
+    if (reference.system === "Op.") {
+        return reference.number.includes("/")
+            ? `op.${reference.number}`
+            : `op. ${reference.number}`;
+    }
     if (reference.system === "Wq." || reference.system === "H.") {
         return `${reference.system} ${reference.number}`;
     }
@@ -516,7 +519,9 @@ export function catalogReferencesOf(title: string): CatalogReference[] {
             break;
         }
         const display = match[0].trim();
-        const number = display
+        const number = system === "Op."
+            ? `${match[1]}${match[2] || match[3] ? `/${match[2] ?? match[3]}` : ""}`
+            : display
             .replace(
                 system === "K"
                     ? /^(?:KV|K\.?)\s*/i

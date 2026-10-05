@@ -40,7 +40,7 @@ function cleanText(value: string | null | undefined): string {
     return (value ?? "").trim().replace(/\s+/g, " ");
 }
 
-function titleFromFileName(fileName: string): string {
+export function titleFromFileName(fileName: string): string {
     const withoutExtension = fileName.replace(/\.[^./\\]+$/, "");
     const normalized = withoutExtension.replace(/_+/g, " ").trim();
     return normalized || fileName;
