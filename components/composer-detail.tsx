@@ -1,6 +1,6 @@
 import { IconArrowLeft, IconPlayerPlay } from "@tabler/icons-react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AlbumGrid } from "@/components/album-grid";
 import { ComposerWorks } from "@/components/composer-works";
 import { TrackList } from "@/components/track-list";
@@ -84,6 +84,18 @@ export function ComposerDetail({composerName}: {composerName: string}) {
       </header>
 
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="flex min-h-64 min-w-0 flex-col gap-3 lg:h-[20rem]">
+          <h2 className="text-base font-medium text-zinc-800">Wiki bio</h2>
+          <WikiBio composerName={composerName} />
+        </section>
+
+        <section className="flex min-w-0 flex-col gap-3 lg:h-[20rem]">
+          <h2 className="text-base font-medium text-zinc-800">Works</h2>
+          <div className="min-h-0 flex-1">
+            <ComposerWorks composerName={composerName} />
+          </div>
+        </section>
+
         <section className="flex min-w-0 flex-col gap-3">
           <h2 className="text-base font-medium text-zinc-800">Related recordings</h2>
           <div
@@ -94,7 +106,10 @@ export function ComposerDetail({composerName}: {composerName: string}) {
               tracks={featuredTracks}
               showIndex={false}
               showCoverArt
+              showActions={false}
               queueTracks={composerTracks}
+              trackArtist={() => null}
+              trackAlbum={() => null}
               onRemove={(track: Track) => void removeTracks([track.id])}
               emptyMessage="该作曲家没有相关录音"
             />
@@ -135,10 +150,118 @@ export function ComposerDetail({composerName}: {composerName: string}) {
         </section>
       </div>
 
-      <section className="flex min-w-0 flex-col gap-3">
-        <h2 className="text-base font-medium text-zinc-800">Works</h2>
-        <ComposerWorks composerName={composerName} />
-      </section>
+    </div>
+  );
+}
+
+interface WikiSummary {
+  title: string;
+  extract: string;
+  page: string;
+  thumbnail?: string;
+}
+
+function WikiBio({ composerName }: { composerName: string }) {
+  const [summary, setSummary] = useState<WikiSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setSummary(null);
+    const article = encodeURIComponent(composerName.trim().replaceAll(" ", "_"));
+    const request = async () => {
+      const nameTokens = (name: string) =>
+        name
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter(Boolean);
+      const composerTokens = nameTokens(composerName);
+      const surname = composerTokens.at(-1);
+      const titleMatchScore = (title: string) =>
+        nameTokens(title).filter((token) => composerTokens.includes(token)).length;
+      const matchingSurname = (title: string) =>
+        Boolean(
+          surname &&
+            nameTokens(title).includes(surname) &&
+            titleMatchScore(title) >= Math.min(2, composerTokens.length),
+        );
+      const fetchSummary = async (title: string) => {
+        const response = await fetch(
+          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replaceAll(" ", "_"))}`,
+          { signal: controller.signal, headers: { Accept: "application/json" } },
+        );
+        return response.ok ? response.json() : null;
+      };
+
+      try {
+        let data = await fetchSummary(composerName.trim());
+        if (
+          typeof data?.extract !== "string" ||
+          !data.extract.trim() ||
+          (typeof data.title === "string" && !matchingSurname(data.title))
+        ) {
+          const searchUrl = new URL("https://en.wikipedia.org/w/rest.php/v1/search/page");
+          searchUrl.searchParams.set("q", composerName.trim());
+          searchUrl.searchParams.set("limit", "5");
+          const searchResponse = await fetch(searchUrl, {
+            signal: controller.signal,
+            headers: { Accept: "application/json" },
+          });
+          const results = searchResponse.ok ? await searchResponse.json() : null;
+          const pages = Array.isArray(results?.pages) ? results.pages : [];
+          const resultTitle = pages
+            .filter((page: { title?: unknown }) =>
+              typeof page.title === "string" && matchingSurname(page.title),
+            )
+            .sort((a: { title: string }, b: { title: string }) => {
+              return titleMatchScore(b.title) - titleMatchScore(a.title);
+            })[0]?.title;
+          if (typeof resultTitle === "string") data = await fetchSummary(resultTitle);
+        }
+        if (
+          typeof data?.extract !== "string" ||
+          !data.extract.trim() ||
+          (typeof data.title === "string" && !matchingSurname(data.title))
+        ) return;
+        setSummary({
+          title: typeof data.title === "string" ? data.title : composerName,
+          extract: data.extract,
+          page: data.content_urls?.desktop?.page ?? `https://en.wikipedia.org/wiki/${article}`,
+          thumbnail: data.thumbnail?.source,
+        });
+      } catch {
+        // Missing articles and network errors use the same quiet empty state.
+      }
+    };
+
+    void request().finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [composerName]);
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5">
+      {loading ? (
+        <p role="status" className="text-sm text-zinc-500">正在加载 Wikipedia 简介…</p>
+      ) : summary ? (
+        <div className="flow-root">
+          {summary.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={summary.thumbnail} alt={summary.title} className="mb-3 h-40 w-40 rounded-lg object-cover sm:float-left sm:mr-4 sm:mb-2" />
+          ) : null}
+          <h3 className="mb-2 text-sm font-medium text-zinc-800">{summary.title}</h3>
+          <p className="whitespace-pre-line text-sm leading-6 text-zinc-600">{summary.extract}</p>
+          <a href={summary.page} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs text-app-accent hover:underline">
+            在 Wikipedia 阅读
+          </a>
+        </div>
+      ) : (
+        <p className="text-sm text-zinc-500">暂时没有找到 Wikipedia 简介。</p>
+      )}
     </div>
   );
 }

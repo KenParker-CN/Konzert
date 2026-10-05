@@ -19,7 +19,7 @@ export function CatalogTitle({
     return onOpenRecording ? (
       <button
         type="button"
-        className="text-left hover:underline hover:underline-offset-2"
+        className="inline text-left hover:underline hover:underline-offset-2"
         onClick={(event) => {
           event.stopPropagation();
           onOpenRecording();
@@ -39,7 +39,7 @@ export function CatalogTitle({
           <button
             key={`title-${cursor}`}
             type="button"
-            className="hover:underline hover:underline-offset-2"
+            className="inline hover:underline hover:underline-offset-2"
             onClick={(event) => {
               event.stopPropagation();
               onOpenRecording();
@@ -71,7 +71,7 @@ export function CatalogTitle({
         <button
           key={`title-${cursor}`}
           type="button"
-          className="hover:underline hover:underline-offset-2"
+          className="inline hover:underline hover:underline-offset-2"
           onClick={(event) => {
             event.stopPropagation();
             onOpenRecording();

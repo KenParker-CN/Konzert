@@ -33,10 +33,10 @@ export function isComposerWorkFieldVisible(
   field: string,
   system: ComposerWorkSystem,
 ): boolean {
+  const normalizedField = field.trim().toLocaleLowerCase();
+  if (normalizedField === "sort") return false;
   if (system !== "Hob.") return true;
-  return !["sort", "series", "no."].includes(
-    field.trim().toLocaleLowerCase(),
-  );
+  return !["series", "no."].includes(normalizedField);
 }
 
 export const TWV_CATEGORIES = [

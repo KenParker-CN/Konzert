@@ -308,7 +308,13 @@ export function groupComposers(tracks: Track[]): ArtistSummary[] {
             }
         }
     }
-    return [...groups.values()].sort((a, b) => compareText(a.name, b.name));
+    return [...groups.values()]
+        .filter(({tracks: composerTracks}) =>
+            composerTracks.some((track) =>
+                (track.genre ?? "").toLocaleLowerCase().includes("classical"),
+            ),
+        )
+        .sort((a, b) => compareText(a.name, b.name));
 }
 
 export function sortArtists(
@@ -438,7 +444,7 @@ const CATALOG_NUMBER_PATTERNS = [
     /*Mozart's*/
     {system: "K", pattern: /\b(?:K|K\.|KV)\s*\d+(?:[A-Za-z]+|\/[A-Za-z0-9]+)?\b/i},
     /*Opus numbers*/
-    {system: "Op.", pattern: /\bOp(?:us)?\.?\s*(\d+)(?:(?:\s*,?\s*No\.?\s*(\d+))|(?:\s*\/\s*(\d+)))?/i},
+    {system: "Op.", pattern: /\bOp(?:us)?\.?\s*(\d+)(?:\s*,?\s*No\.?\s*(\d+)|\s*\/\s*(\d+))?/i},
     /*CPE Bach's*/
     {system: "Wq.", pattern: /\bWq\.?\s*\d+(?:\/\d+)?\b/i,},
     {system: "H.", pattern: /\bH\.?\s*\d+(?:\.\d+)?\b/i,},

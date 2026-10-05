@@ -12,7 +12,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { albumKeyOf, artistNamesOf } from "@/lib/catalog";
+import { albumKeyOf, artistNamesOf, composerNamesOf } from "@/lib/catalog";
 import { CatalogTitle } from "@/components/catalog-title";
 import { formatDuration } from "@/lib/format";
 import { useLibrary } from "@/lib/library-provider";
@@ -37,6 +37,7 @@ interface TrackListProps {
   onRemove?: (track: Track) => void;
   emptyMessage?: string;
   showCoverArt?: boolean;
+  showActions?: boolean;
 }
 
 export function TrackList({
@@ -50,10 +51,11 @@ export function TrackList({
   trackArtist,
   trackAlbum,
   showCoverArt = false,
+  showActions = true,
 }: TrackListProps) {
   const player = usePlayer();
   const { favorites, toggleFavorite, settings, removeTracks } = useLibrary();
-  const { openAlbum, openArtist, openRecording } = useNav();
+  const { openAlbum, openArtist, openComposer, openRecording } = useNav();
   const queue = queueTracks ?? tracks;
   const titleFor = titleOf ?? ((track: Track) => track.title);
   const artistFor = trackArtist ?? ((track: Track) => track.artist);
@@ -80,6 +82,7 @@ export function TrackList({
         const wasLastPlayed = settings.lastTrackId === track.id && !isCurrent;
         const artist = artistFor(track);
         const album = albumFor(track);
+        const composers = composerNamesOf(track);
 
         return (
           <ContextMenu key={track.id}>
@@ -216,10 +219,15 @@ export function TrackList({
 
             {/* 时长；悬浮时操作按钮覆盖在同一位置，避免留下空白列。 */}
             <div className="relative flex min-w-0 items-center justify-end">
-              <span className="hidden text-right text-xs tabular-nums text-zinc-400 transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 sm:block">
+              <span
+                className={`hidden text-right text-xs tabular-nums text-zinc-400 transition-opacity sm:block ${
+                  showActions ? "group-hover:opacity-0 group-focus-within:opacity-0" : ""
+                }`}
+              >
                 {formatDuration(track.duration)}
               </span>
-              <div className="absolute inset-y-0 right-0 flex items-center justify-end gap-0.5 bg-transparent pl-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+              {showActions ? (
+                <div className="absolute inset-y-0 right-0 flex items-center justify-end gap-0.5 bg-transparent pl-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                 <button
                   type="button"
                   aria-label={isFavorite ? "取消收藏" : "收藏"}
@@ -273,7 +281,8 @@ export function TrackList({
                   <IconTrash className="h-4 w-4" />
                 </button>
                 ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
               </div>
             </ContextMenuTrigger>
@@ -306,6 +315,23 @@ export function TrackList({
                   ))}
                 </ContextMenuSubContent>
               </ContextMenuSub>
+              {composers.length > 0 ? (
+                <ContextMenuSub>
+                  <ContextMenuSubTrigger>前往作曲家</ContextMenuSubTrigger>
+                  <ContextMenuSubContent>
+                    {composers.map((composer) => (
+                      <ContextMenuItem
+                        key={composer}
+                        onClick={() => openComposer(composer)}
+                      >
+                        {composer}
+                      </ContextMenuItem>
+                    ))}
+                  </ContextMenuSubContent>
+                </ContextMenuSub>
+              ) : (
+                <ContextMenuItem disabled>前往作曲家</ContextMenuItem>
+              )}
               <ContextMenuItem onClick={() => openAlbum(albumKeyOf(track))}>
                 前往专辑
               </ContextMenuItem>

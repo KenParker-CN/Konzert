@@ -23,7 +23,7 @@ import {
 } from "@/lib/composer-works";
 import { useNav } from "@/lib/nav-provider";
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const PAGE_SIZE = 5;
 
 export function ComposerWorks({ composerName }: { composerName: string }) {
   const catalog = useMemo(
@@ -59,7 +59,6 @@ function ComposerWorksCatalog({
   const [works, setWorks] = useState<ComposerWork[]>([]);
   const [selectedWork, setSelectedWork] = useState<ComposerWork | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [pageInput, setPageInput] = useState("1");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -108,11 +107,11 @@ function ComposerWorksCatalog({
     () => [...new Set(works.map(({ key }) => key).filter(Boolean))].sort(),
     [works],
   );
-  const pageCount = Math.max(1, Math.ceil(filteredWorks.length / pageSize));
+  const pageCount = Math.max(1, Math.ceil(filteredWorks.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
   const visibleWorks = filteredWorks.slice(
-    (safePage - 1) * pageSize,
-    safePage * pageSize,
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
   );
   const goToPage = (nextPage: number) => {
     const boundedPage = Math.max(1, Math.min(pageCount, nextPage));
@@ -121,7 +120,7 @@ function ComposerWorksCatalog({
   };
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col gap-2">
       {status.kind === "loading" ? (
         <p
           role="status"
@@ -226,7 +225,8 @@ function ComposerWorksCatalog({
               ))}
             </select>
           </div>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            <div className="min-h-0 flex-1 overflow-y-auto">
             {filteredWorks.length > 0 ? (
               <ul className="divide-y divide-zinc-100">
                 {visibleWorks.map((work, index) => {
@@ -234,7 +234,7 @@ function ComposerWorksCatalog({
 
                   return (
                     <li
-                      key={`${work.catalogue}:${(safePage - 1) * pageSize + index}`}
+                      key={`${work.catalogue}:${(safePage - 1) * PAGE_SIZE + index}`}
                       className="flex min-w-0 items-center gap-3 px-4 py-3"
                     >
                       <div className="min-w-0 flex-1">
@@ -301,9 +301,9 @@ function ComposerWorksCatalog({
                 </button>
               </div>
             )}
-
+            </div>
           {filteredWorks.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-center gap-2 border-t border-zinc-200 px-3 py-2 text-xs text-zinc-500">
+            <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-zinc-200 px-3 py-2 text-xs text-zinc-500">
               <button
                 type="button"
                 onClick={() => goToPage(safePage - 1)}
@@ -325,25 +325,6 @@ function ComposerWorksCatalog({
                 下一页
                 <IconChevronRight className="size-3.5" />
               </button>
-              <label className="flex items-center gap-1.5">
-                每页
-                <select
-                  value={pageSize}
-                  onChange={(event) => {
-                    setPageSize(Number(event.target.value));
-                    goToPage(1);
-                  }}
-                  aria-label="每页显示条数"
-                  className="h-7 rounded-md border border-input bg-white px-1.5 text-xs text-zinc-700 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-                >
-                  {PAGE_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                条
-              </label>
               <form
                 className="flex items-center gap-1.5"
                 onSubmit={(event) => {
@@ -379,7 +360,7 @@ function ComposerWorksCatalog({
               </form>
             </div>
           ) : null}
-            {filteredWorks.length > 0 &&
+          {filteredWorks.length > 0 &&
             (query || typeFilter || keyFilter || twvCategoryFilter) ? (
               <p className="border-t border-zinc-200 px-3 py-2 text-center text-xs text-zinc-500">
                 筛选结果：{filteredWorks.length} / {works.length} 条作品
@@ -436,6 +417,6 @@ function ComposerWorksCatalog({
           ) : null}
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
