@@ -137,8 +137,9 @@ export async function collectFromPath(
   let skippedDirectories = 0;
 
   const queue: string[] = [rootPath];
-  while (queue.length > 0) {
-    const current = queue.shift() as string;
+  let queueIndex = 0;
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex++];
     let entries;
     try {
       entries = await readDir(current);
@@ -159,22 +160,38 @@ export async function collectFromPath(
         continue;
       }
       if (!entry.isFile || !isAudioFileName(entry.name)) continue;
-      let fileSize = 0;
-      try {
-        fileSize = (await stat(fullPath)).size;
-      } catch {
-        // stat 失败（无权限或文件被占用），大小留 0，后续解析时会重新获取。
-      }
       candidates.push({
         key: pathSourceKey(fullPath),
         fileName: entry.name,
-        fileSize,
+        fileSize: 0,
         origin: { kind: "path", path: fullPath },
         displayPath: fullPath,
       });
       onProgress?.({ label: fullPath, files: candidates.length });
     }
   }
+
+  // Tauri 的 stat 需要跨 Rust/前端桥接；有限并发避免逐文件串行等待。
+  let statCursor = 0;
+  const statWorker = async () => {
+    while (statCursor < candidates.length) {
+      const candidate = candidates[statCursor++];
+      if (candidate.origin.kind !== "path") continue;
+      try {
+        const info = await stat(candidate.origin.path);
+        candidate.fileSize = info.size;
+        candidate.fileModifiedAt = info.mtime?.getTime() || undefined;
+      } catch {
+        // stat 失败（无权限或文件被占用），大小留 0，后续解析时会重新获取。
+      }
+    }
+  };
+  await Promise.all(
+    Array.from(
+      { length: Math.min(16, candidates.length) },
+      () => statWorker(),
+    ),
+  );
 
   return { candidates, failures, skippedDirectories };
 }
@@ -341,7 +358,7 @@ async function parseCandidates(
       try {
         const file = await readOriginFile(candidate.origin, candidate.fileName);
         candidate.fileSize = file.size;
-        candidate.fileModifiedAt = file.lastModified || undefined;
+        candidate.fileModifiedAt ??= file.lastModified || undefined;
         const metadata = await parseAudioFile(file, candidate.fileName);
         parsed.push({ candidate, parsed: metadata });
       } catch (error) {

@@ -78,18 +78,18 @@ export function ComposerDetail({composerName}: {composerName: string}) {
             className="flex shrink-0 items-center gap-2 rounded-full bg-app-accent px-5 py-2 text-sm font-medium text-white transition hover:brightness-90 disabled:opacity-40"
           >
             <IconPlayerPlay className="h-4 w-4 fill-current" />
-              播放
+              Play
             </button>
         </div>
       </header>
 
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="flex min-h-64 min-w-0 flex-col gap-3 lg:h-[20rem]">
-          <h2 className="text-base font-medium text-zinc-800">Wiki bio</h2>
+        <section className="flex min-h-64 min-w-0 flex-col gap-3 lg:h-80">
+          <h2 className="text-base font-medium text-zinc-800">Wikibio</h2>
           <WikiBio composerName={composerName} />
         </section>
 
-        <section className="flex min-w-0 flex-col gap-3 lg:h-[20rem]">
+        <section className="flex min-w-0 flex-col gap-3 lg:h-80">
           <h2 className="text-base font-medium text-zinc-800">Works</h2>
           <div className="min-h-0 flex-1">
             <ComposerWorks composerName={composerName} />
@@ -145,7 +145,7 @@ export function ComposerDetail({composerName}: {composerName: string}) {
             albums={albums}
             emptyMessage="没有找到该作曲家的相关专辑"
             layout="column-carousel"
-            carouselHeight={recordingsCardHeight}
+            carouselHeight={Math.max(recordingsCardHeight, 360)}
           />
         </section>
       </div>

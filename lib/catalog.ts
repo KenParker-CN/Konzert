@@ -636,23 +636,24 @@ function composersOf(tracks: Track[]): string {
 }
 
 /**
- * 古典作品分组：曲目标题第一个冒号之前内容相同的曲目归为一组
- * （如「第五交响曲: 第一乐章」系列），归组至少需要两首曲目；
- * 未参与分组的曲目保持原位置普通显示。顺序按首次出现位置，段内保持专辑曲目顺序。
+ * 古典作品分组：仅归组相邻/连续的同作品曲目。
+ * 如「第五交响曲: 第一乐章」「第五交响曲: 第二乐章」连续出现才归为一组；
+ * 若中间夹杂其他作品或不同专辑，则不归组，按单乐章作品显示。
  */
 export function groupWorks(tracks: Track[]): WorkSection[] {
-    const counts = new Map<string, number>();
-    for (const track of tracks) {
-        const key = workIdentityKeyOf(track);
-        if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-
     const sections: WorkSection[] = [];
-    const sectionByKey = new Map<string, WorkSection>();
+    let currentSection: WorkSection | null = null;
+    let previousKey: string | null = null;
+
     for (const track of tracks) {
         const key = workIdentityKeyOf(track);
-        const shared = key !== null && (counts.get(key) ?? 0) >= 2;
-        if (!shared) {
+
+        if (!key) {
+            // No work identity - single track
+            if (currentSection) {
+                currentSection = null;
+                previousKey = null;
+            }
             sections.push({
                 key: `single:${track.id}`,
                 work: null,
@@ -662,21 +663,38 @@ export function groupWorks(tracks: Track[]): WorkSection[] {
             });
             continue;
         }
-        let section = sectionByKey.get(key);
-        if (!section) {
-            section = {
-                key: `work:${key}`,
+
+        if (currentSection && key === previousKey) {
+            // Adjacent track with same work key - continue group
+            currentSection.tracks.push(track);
+            currentSection.duration += track.duration || 0;
+            currentSection.composer = composersOf(currentSection.tracks);
+        } else {
+            // New work or non-adjacent - start new group
+            currentSection = {
+                key: `work:${key}:${sections.length}`,
                 work: workTitleOf(track.title),
-                composer: "",
-                tracks: [],
-                duration: 0,
+                composer: track.composer.trim(),
+                tracks: [track],
+                duration: track.duration || 0,
             };
-            sectionByKey.set(key, section);
-            sections.push(section);
+            sections.push(currentSection);
         }
-        section.tracks.push(track);
-        section.duration += track.duration || 0;
-        section.composer = composersOf(section.tracks);
+        previousKey = key;
     }
-    return sections;
+
+    // Post-process: convert single-track "groups" to ungrouped tracks
+    return sections.map((section) => {
+        if (section.tracks.length === 1) {
+            const track = section.tracks[0];
+            return {
+                key: `single:${track.id}`,
+                work: null,
+                composer: "",
+                tracks: [track],
+                duration: track.duration || 0,
+            };
+        }
+        return section;
+    });
 }
