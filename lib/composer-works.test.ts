@@ -63,8 +63,83 @@ test("maps supported composer names to their catalogue systems", () => {
     system: "HWV",
     fileName: "HWV.csv",
   });
+  assert.deepEqual(composerWorksCatalogOf("Dietrich Buxtehude"), {
+    system: "BuxWV",
+    fileName: "BuxWV.csv",
+  });
+  // Canonical upstream spelling (composers.csv) is the historical "Dieterich".
+  assert.deepEqual(composerWorksCatalogOf("Dieterich Buxtehude"), {
+    system: "BuxWV",
+    fileName: "BuxWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Buxtehude, Dieterich"), {
+    system: "BuxWV",
+    fileName: "BuxWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Diderich Hansen Buxtehude"), {
+    system: "BuxWV",
+    fileName: "BuxWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Franz Schubert"), {
+    system: "D.",
+    fileName: "Deutsch.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Schubert, Franz Peter"), {
+    system: "D.",
+    fileName: "Deutsch.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Luigi Boccherini"), {
+    system: "G.",
+    fileName: "Gerard.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Gustav Mahler"), {
+    system: "GMW",
+    fileName: "GMW.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Jean-Baptiste Lully"), {
+    system: "LWV",
+    fileName: "LWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Lully, Jean-Baptiste"), {
+    system: "LWV",
+    fileName: "LWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Felix Mendelssohn Bartholdy"), {
+    system: "MWV",
+    fileName: "MWV.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Maurice Ravel"), {
+    system: "M.",
+    fileName: "Marnat.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Jean-Philippe Rameau"), {
+    system: "RCT",
+    fileName: "RCT.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Pyotr Ilyich Tchaikovsky"), {
+    system: "TH",
+    fileName: "Tchaikovsky.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Tchaikovsky, Pyotr"), {
+    system: "TH",
+    fileName: "Tchaikovsky.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Arcangelo Corelli"), {
+    system: "Op.",
+    fileName: "Corelli.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Dmitri Shostakovich"), {
+    system: "Op.",
+    fileName: "Shostakovich.csv",
+  });
+  assert.deepEqual(composerWorksCatalogOf("Shostakovich, Dmitri"), {
+    system: "Op.",
+    fileName: "Shostakovich.csv",
+  });
   assert.equal(composerWorksCatalogOf("Leopold Mozart"), null);
   assert.equal(composerWorksCatalogOf("Johann Christian Bach"), null);
+  assert.equal(composerWorksCatalogOf("Richard Wagner"), null);
+  assert.equal(composerWorksCatalogOf("Franz Liszt"), null);
 });
 
 test("parses BOM, escaped quotes, commas, and newlines in CSV fields", () => {
@@ -279,5 +354,137 @@ test("reports malformed CSV instead of returning partial records", () => {
   assert.throws(
     () => parseCsv('Catalogue,Title\nKV 1,"Title"extra'),
     /after quoted CSV field/,
+  );
+});
+
+test("reads catalogue references from system-named and opus columns", () => {
+  const [lully] = composerWorksFromCsv(
+    "SORT,LWV,Title,Type,Note\r\n1,LWV 1,Ballet du temps,Ballet,\r\n",
+    "LWV",
+  );
+  assert.equal(lully.catalogue, "LWV 1");
+  assert.equal(lully.title, "Ballet du temps");
+  assert.equal(lully.type, "Ballet");
+
+  const [tchaikovsky] = composerWorksFromCsv(
+    "SORT,TH,ČW,Opus,Year,Title,Type,Key,Instrumentation,Note\r\n" +
+      "1,TH 1,ČW 1,3,1867–68,Воево́да,Opera,,,Opera in 3 acts\r\n",
+    "TH",
+  );
+  assert.equal(tchaikovsky.catalogue, "TH 1");
+  assert.equal(tchaikovsky.title, "Воево́да");
+
+  const [corelli] = composerWorksFromCsv(
+    "SORT,Opus,Title,Type,Key,Movement,Note\r\n" +
+      "1,op. 1/1,Sonate da chiesa in F,Sonata,F,,Note\r\n",
+    "Op.",
+  );
+  assert.equal(corelli.catalogue, "op. 1/1");
+  assert.equal(corelli.title, "Sonate da chiesa in F");
+  assert.equal(corelli.type, "Sonata");
+});
+
+test("maps catalogue references for the newer thematic systems", () => {
+  const references = (
+    csv: string,
+    system: Parameters<typeof composerWorksFromCsv>[1],
+    fileName: string,
+  ) => {
+    const [work] = composerWorksFromCsv(csv, system);
+    return catalogReferencesOfComposerWork(work, { system, fileName }).map(
+      ({ system: referenceSystem, number }) => ({
+        system: referenceSystem,
+        number,
+      }),
+    );
+  };
+
+  assert.deepEqual(
+    references(
+      "Catalogue,Date,Title,Type,Key\r\nD. 960,1828,Piano Sonata,Sonata,B major\r\n",
+      "D.",
+      "Deutsch.csv",
+    ),
+    [{ system: "D.", number: "960" }],
+  );
+  assert.deepEqual(
+    references(
+      "Catalogue,Title,Type,Key\r\nG. 32,Sonata in F major,Sonata,F major\r\n",
+      "G.",
+      "Gerard.csv",
+    ),
+    [{ system: "G.", number: "32" }],
+  );
+  assert.deepEqual(
+    references(
+      "Catalogue,Date,Title,Type,Key\r\nM. 1,1888,Mouvement de sonate,,\r\n",
+      "M.",
+      "Marnat.csv",
+    ),
+    [{ system: "M.", number: "1" }],
+  );
+  assert.deepEqual(
+    references(
+      "Sort,Catalogue,Title,Type,Key\r\n1,GMW 1,Das klagende Lied,Lied,\r\n",
+      "GMW",
+      "GMW.csv",
+    ),
+    [{ system: "GMW", number: "1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,LWV,Title,Type,Note\r\n1,LWV 1,Ballet du temps,Ballet,\r\n",
+      "LWV",
+      "LWV.csv",
+    ),
+    [{ system: "LWV", number: "1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,MWV,Opus,Date,Title,Type,Key\r\n1001,MWV A1,,,Gloria,,\r\n",
+      "MWV",
+      "MWV.csv",
+    ),
+    [{ system: "MWV", number: "A1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,Catalogue,Title,Type,Key\r\n1,RCT 1,Premier Livre,Suite,A minor\r\n",
+      "RCT",
+      "RCT.csv",
+    ),
+    [{ system: "RCT", number: "1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,TH,ČW,Opus,Year,Title,Type,Key\r\n1,TH 1,ČW 1,3,1867–68,Воево́да,Opera,\r\n",
+      "TH",
+      "Tchaikovsky.csv",
+    ),
+    [{ system: "TH", number: "1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,Catalogue,Title,Opus,Type,Key\r\n1,BuxWV 1,\"Accedite gentes\",,Cantata,\r\n",
+      "BuxWV",
+      "BuxWV.csv",
+    ),
+    [{ system: "BuxWV", number: "1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,Opus,Title,Type,Key\r\n1,op. 1/1,Sonate da chiesa in F,Sonata,F\r\n",
+      "Op.",
+      "Corelli.csv",
+    ),
+    [{ system: "Op.", number: "1/1" }],
+  );
+  assert.deepEqual(
+    references(
+      "SORT,Opus,Title,Type,Key\r\n1,op. 1,Scherzo in F-sharp minor,Scherzo,F-sharp minor\r\n",
+      "Op.",
+      "Shostakovich.csv",
+    ),
+    [{ system: "Op.", number: "1" }],
   );
 });

@@ -89,6 +89,88 @@ test("parses abbreviated CPE Bach catalog numbers and displays standard notation
   assert.equal(catalogReferenceOf("H. 1.5")?.number, "1.5");
 });
 
+test("parses the thematic catalogue systems added after the original ones", () => {
+  assert.deepEqual(catalogReferenceOf("D. 960: I. Allegro"), {
+    system: "D.",
+    number: "960",
+    display: "D. 960",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("G. 32"), {
+    system: "G.",
+    number: "32",
+    display: "G. 32",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("M. 1"), {
+    system: "M.",
+    number: "1",
+    display: "M. 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("GMW 1"), {
+    system: "GMW",
+    number: "1",
+    display: "GMW 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("LWV 1"), {
+    system: "LWV",
+    number: "1",
+    display: "LWV 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("MWV A1"), {
+    system: "MWV",
+    number: "A1",
+    display: "MWV A1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("MWV 18"), {
+    system: "MWV",
+    number: "18",
+    display: "MWV 18",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("RCT 1"), {
+    system: "RCT",
+    number: "1",
+    display: "RCT 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("TH 1"), {
+    system: "TH",
+    number: "1",
+    display: "TH 1",
+    index: 0,
+  });
+  assert.deepEqual(catalogReferenceOf("BuxWV 1"), {
+    system: "BuxWV",
+    number: "1",
+    display: "BuxWV 1",
+    index: 0,
+  });
+  assert.equal(catalogReferenceDisplay(catalogReferenceOf("D. 960")!), "D. 960");
+});
+
+test("keeps key words such as D major or G major out of the dotted catalogues", () => {
+  assert.deepEqual(catalogReferencesOf("Symphony in D major"), []);
+  assert.deepEqual(catalogReferencesOf("Sonata in G major, op. 31/1"), [
+    {
+      system: "Op.",
+      number: "31/1",
+      display: "op. 31/1",
+      index: 19,
+    },
+  ]);
+  assert.deepEqual(
+    catalogReferencesOf("Piano Sonata in B major, D. 960: I. Allegro").map(
+      ({ system, number }) => ({ system, number }),
+    ),
+    [{ system: "D.", number: "960" }],
+  );
+});
+
 test("uses the first colon for ordinary work titles", () => {
   assert.equal(workKeyOf("Violin Concerto: Allegro"), "violin concerto");
   assert.equal(workTitleOf("Violin Concerto: Allegro"), "Violin Concerto");
@@ -245,13 +327,13 @@ test("does not merge same-title works by different composers", () => {
       "1",
     ),
     track(
-      "Concerto for Viola & Orchestra in D major: I. Allegro",
-      "Carl Stamitz",
+      "Concerto for Viola & Orchestra in D major: II. Largo",
+      "Franz Anton Hoffmeister",
       "2",
     ),
     track(
-      "Concerto for Viola & Orchestra in D major: II. Largo",
-      "Franz Anton Hoffmeister",
+      "Concerto for Viola & Orchestra in D major: I. Allegro",
+      "Carl Stamitz",
       "3",
     ),
     track(
@@ -264,7 +346,7 @@ test("does not merge same-title works by different composers", () => {
   assert.equal(sections.length, 2);
   assert.deepEqual(
     sections.map((section) => section.tracks.map((item) => item.id)),
-    [["1", "3"], ["2", "4"]],
+    [["1", "2"], ["3", "4"]],
   );
   assert.deepEqual(
     sections.map((section) => section.composer),

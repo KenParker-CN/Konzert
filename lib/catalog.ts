@@ -452,9 +452,22 @@ const CATALOG_NUMBER_PATTERNS = [
     {system: "BuxWV", pattern: /\bBuxWV\s+\d+[A-Z]?/i},
     /*Haydn's*/
     {system: "Hob.", pattern: /\bHob\.\s*[IVXLCDM]+[a-z]?:\d+\b/i},
-
-
-
+    /*Schubert's*/
+    {system: "D.", pattern: /\bD\.\s*\d+[a-z]?\b/i},
+    /*Boccherini's (Gérard)*/
+    {system: "G.", pattern: /\bG\.\s*\d+[a-z]?\b/i},
+    /*Ravel's (Marnat)*/
+    {system: "M.", pattern: /\bM\.\s*\d+[a-z]?\b/i},
+    /*Mahler's*/
+    {system: "GMW", pattern: /\bGMW\s+\d+[a-z]?/i},
+    /*Lully's*/
+    {system: "LWV", pattern: /\bLWV\s+\d+[a-z]?/i},
+    /*Mendelssohn's*/
+    {system: "MWV", pattern: /\bMWV\s+(?:[A-Z]{1,3}\s*)?\d+/i},
+    /*Rameau's*/
+    {system: "RCT", pattern: /\bRCT\s+\d+[a-z]?/i},
+    /*Tchaikovsky's*/
+    {system: "TH", pattern: /\bTH\s+\d+[a-z]?/i},
 ] as const;
 
 export interface CatalogReference {
@@ -535,7 +548,12 @@ export function catalogReferencesOf(title: string): CatalogReference[] {
                       ? /^Wq\.?\s*/i
                       : system === "H."
                         ? /^H\.?\s*/i
-                        : new RegExp(`^${system}\\s*`, "i"),
+                        : new RegExp(
+                            // Escape dotted systems such as "D." so the dot
+                            // only matches itself.
+                            `^${system.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`,
+                            "i",
+                          ),
                 "",
             )
             .trim();

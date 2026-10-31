@@ -24,7 +24,7 @@
 - **个性化界面** — 浅色/深色主题、强调色、可收起侧栏与长标题自动滚动
 - **快速导入** — 支持直接拖拽文件/文件夹导入
 - **曲库维护** — 支持刷新元数据、Tauri 文件夹监控与扫描进度节流
-- **作曲家作品目录** — 在线读取 Mozart（KV）、Telemann（TWV）与 Vivaldi（RV）作品数据，支持分页查看和完整条目详情
+- **作曲家作品目录** — 在线读取 Mozart（KV）、Bach（BWV/CPE）、Haydn（Hob.）、Schubert（D.）、Mahler（GMW）、Corelli 与 Shostakovich（op.）等 18 位作曲家的作品数据，支持分页查看和完整条目详情
 - **双运行环境** — Tauri 下通过本地路径直接读取文件；浏览器下使用 File System Access API
 - **原生窗口** — Tauri 无边框窗口 + 自定义标题栏
 

@@ -7,7 +7,18 @@ export type ComposerWorkSystem =
   | "CPE"
   | "BWV"
   | "HWV"
-  | "Hob.";
+  | "Hob."
+  | "BuxWV"
+  | "D."
+  | "G."
+  | "GMW"
+  | "LWV"
+  | "M."
+  | "MWV"
+  | "RCT"
+  | "TH"
+  /** Opus-numbered catalogues (Corelli, Shostakovich). */
+  | "Op.";
 
 export interface ComposerWorksCatalog {
   system: ComposerWorkSystem;
@@ -124,6 +135,8 @@ export function opusNumbersOfComposerWork(work: ComposerWork): string[] {
 
 const CATALOGS: Array<{
   system: ComposerWorkSystem;
+  /** Overrides the upstream CSV file name when it differs from the system. */
+  fileName?: string;
   aliases: string[];
 }> = [
   {
@@ -205,6 +218,154 @@ const CATALOGS: Array<{
       "haydn j",
     ],
   },
+  {
+    system: "BuxWV",
+    aliases: [
+      "buxtehude",
+      "dieterich buxtehude",
+      "buxtehude dieterich",
+      "diderich buxtehude",
+      "buxtehude diderich",
+      "diderich hansen buxtehude",
+      "hansen buxtehude",
+      "dietrich buxtehude",
+      "buxtehude dietrich",
+      "d buxtehude",
+      "buxtehude d",
+    ],
+  },
+  {
+    system: "D.",
+    fileName: "Deutsch.csv",
+    aliases: [
+      "schubert",
+      "franz schubert",
+      "schubert franz",
+      "franz peter schubert",
+      "schubert franz peter",
+      "f schubert",
+      "schubert f",
+    ],
+  },
+  {
+    system: "G.",
+    fileName: "Gerard.csv",
+    aliases: [
+      "boccherini",
+      "luigi boccherini",
+      "boccherini luigi",
+      "l boccherini",
+      "boccherini l",
+    ],
+  },
+  {
+    system: "GMW",
+    aliases: ["mahler", "gustav mahler", "mahler gustav", "g mahler", "mahler g"],
+  },
+  {
+    system: "LWV",
+    aliases: [
+      "lully",
+      "jean-baptiste lully",
+      "lully jean-baptiste",
+      "jean baptiste lully",
+      "lully jean baptiste",
+      "jb lully",
+      "lully jb",
+      "j b lully",
+      "lully j b",
+      "giovanni battista lully",
+      "lully giovanni battista",
+      "giovanni battista lulli",
+      "lulli giovanni battista",
+      "jb lulli",
+      "j b lulli",
+      "lulli",
+    ],
+  },
+  {
+    system: "MWV",
+    aliases: [
+      "mendelssohn",
+      "felix mendelssohn",
+      "mendelssohn felix",
+      "felix mendelssohn bartholdy",
+      "mendelssohn bartholdy felix",
+      "mendelssohn bartholdy",
+      "f mendelssohn",
+      "mendelssohn f",
+    ],
+  },
+  {
+    system: "M.",
+    fileName: "Marnat.csv",
+    aliases: ["ravel", "maurice ravel", "ravel maurice", "m ravel", "ravel m"],
+  },
+  {
+    system: "RCT",
+    aliases: [
+      "rameau",
+      "jean-philippe rameau",
+      "rameau jean-philippe",
+      "jean philippe rameau",
+      "rameau jean philippe",
+      "j p rameau",
+      "rameau j p",
+    ],
+  },
+  {
+    system: "TH",
+    fileName: "Tchaikovsky.csv",
+    aliases: [
+      "tchaikovsky",
+      "pyotr tchaikovsky",
+      "tchaikovsky pyotr",
+      "peter tchaikovsky",
+      "tchaikovsky peter",
+      "piotr tchaikovsky",
+      "tchaikovsky piotr",
+      "pyotr ilyich tchaikovsky",
+      "peter ilyich tchaikovsky",
+      "piotr ilyich tchaikovsky",
+      "p i tchaikovsky",
+      "pjotr iljitsch tschaikowski",
+      "tschaikowski pjotr iljitsch",
+      "tschaikowski",
+      "piotr ilitch tchaikovski",
+      "tchaikovski piotr ilitch",
+      "tchaikovski",
+      "пётр ильич чайковский",
+      "чайковский пётр ильич",
+      "чайковский",
+    ],
+  },
+  {
+    system: "Op.",
+    fileName: "Corelli.csv",
+    aliases: ["corelli", "arcangelo corelli", "corelli arcangelo", "a corelli", "corelli a"],
+  },
+  {
+    system: "Op.",
+    fileName: "Shostakovich.csv",
+    aliases: [
+      "shostakovich",
+      "dmitri shostakovich",
+      "shostakovich dmitri",
+      "dmitri dmitrievich shostakovich",
+      "shostakovich dmitri dmitrievich",
+      "d shostakovich",
+      "shostakovich d",
+      "dmitri schostakowitsch",
+      "schostakowitsch dmitri",
+      "schostakowitsch",
+      "dmitri chostakovitch",
+      "chostakovitch dmitri",
+      "chostakovitch",
+      "дмитрий шостакович",
+      "шостакович дмитрий",
+      "шостакович",
+    ],
+  },
 ];
 
 const DATA_BASE_URL =
@@ -233,7 +394,11 @@ export function composerWorksCatalogOf(
   );
 
   return catalog
-    ? { system: catalog.system, fileName: `${catalog.system.replace('.', '')}.csv` }
+    ? {
+        system: catalog.system,
+        fileName:
+          catalog.fileName ?? `${catalog.system.replace(/\./g, "")}.csv`,
+      }
     : null;
 }
 
@@ -343,9 +508,21 @@ export function composerWorksFromCsv(
     emptyHeaderNames: system === "Hob." ? { 3: "Catalogue" } : undefined,
   });
   const headers = Object.keys(rows[0] ?? {});
-  const catalogueColumn = headers.find(
-    (header) => header.trim().toLocaleLowerCase() === "catalogue",
-  );
+  const findHeader = (name: string) =>
+    headers.find(
+      (header) => header.trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
+    );
+  // Catalogue column variants: a plain "Catalogue" column, a column named
+  // after the system itself (LWV/MWV/TH), or an "Opus" column for catalogues
+  // that number works by opus instead of a thematic prefix (Corelli,
+  // Shostakovich).
+  const catalogueColumn =
+    findHeader("catalogue") ??
+    (system === "CPE"
+      ? undefined
+      : (findHeader(system) ??
+        findHeader(system.replace(/\./g, "")) ??
+        (system === "Op." ? findHeader("opus") : undefined)));
   const wotquenneColumn = headers.find(
     (header) => header.trim().toLocaleLowerCase() === "wotquenne",
   );

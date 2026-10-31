@@ -370,7 +370,7 @@ function ComposerWorksCatalog({
                             <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
                                 <span>Check source on</span>
                                 <a
-                                    href={`https://github.com/KenParker-CN/konzert-public-data/blob/main/${catalog.fileName}`}
+                                    href={`https://github.com/KenParker-CN/konzert-public-data/blob/main/csv/${catalog.fileName}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex shrink-0 underline underline-offset-2 hover:text-zinc-800"

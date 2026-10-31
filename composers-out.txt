@@ -1,0 +1,144 @@
+
+=== Dmitri Shostakovich
+  Sort: Shostakovich, Dmitri
+  Catalogue: 
+  alias_org: Дмитрий Шостакович
+  alias_de: Dmitri Schostakowitsch
+  alias_fr: Dmitri Chostakovitch
+  alias_cn: 德米特里·肖斯塔科维奇
+  -> Op. <- Shostakovich.csv
+
+=== Jean-Baptiste Lully
+  Sort: Lully, Jean-Baptiste
+  Catalogue: Lully-Werke-Verzeichnis
+  alias_org: Giovanni Battista Lulli
+  alias_de: 
+  alias_fr: 
+  alias_cn: 让-巴蒂斯特·吕利
+  -> LWV <- LWV.csv
+
+=== Dieterich Buxtehude
+  Sort: Buxtehude, Dieterich
+  Catalogue: Buxtehude-Werke-Verzeichnis
+  alias_org: Diderich Hansen Buxtehude
+  alias_de: 
+  alias_fr: 
+  alias_cn: 迪特里希·布克斯特胡德
+  -> !! NO MATCH
+
+=== Arcangelo Corelli
+  Sort: Corelli, Arcangelo
+  Catalogue: 
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 阿尔坎杰罗·科雷利
+  -> Op. <- Corelli.csv
+
+=== Antonio Vivaldi
+  Sort: Vivaldi, Antonio
+  Catalogue: Ryom-Verzeichinis
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 安东尼奥·维瓦尔第
+  -> RV <- RV.csv
+
+=== Georg Philipp Telemann
+  Sort: Telemann, Georg Philipp
+  Catalogue: Telemann-Werke-Verzeichnis
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 格奥尔格·菲利普·泰勒曼
+  -> TWV <- TWV.csv
+
+=== Jean-Philippe Rameau
+  Sort: Rameau, Jean-Philippe
+  Catalogue: Rameau-Catalogue-Thematisches
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 让-菲利普·拉莫
+  -> RCT <- RCT.csv
+
+=== George Frideric Handel
+  Sort: Handel, George Frideric
+  Catalogue: Handel-Werke-Verzeichinis
+  alias_org: George Frideric Händel
+  alias_de: 
+  alias_fr: 
+  alias_cn: 乔治·弗里德里希·亨德尔
+  -> HWV <- HWV.csv
+
+=== Joseph Haydn
+  Sort: Haydn, Joseph
+  Catalogue: Hoboken catalogue
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 约瑟夫·海顿
+  -> Hob. <- Hob.csv
+
+=== Luigi Boccherini
+  Sort: Boccherini, Luigi
+  Catalogue: Gérard catalogue
+  alias_org: Ridolfo Luigi Boccherini
+  alias_de: 
+  alias_fr: 
+  alias_cn: 路易吉·波凯里尼
+  -> G. <- Gerard.csv
+
+=== Wolfgang Amadeus Mozart
+  Sort: Mozart, Wolfgang Amadeus
+  Catalogue: Köchel-Verzeichnis
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 沃尔夫冈·阿马德乌斯·莫扎特
+  -> KV <- KV.csv
+
+=== Franz Schubert
+  Sort: Schubert, Franz
+  Catalogue: Deutsch catalogue
+  alias_org: Franz Schubert
+  alias_de: 
+  alias_fr: 
+  alias_cn: 弗朗茨·舒伯特
+  -> D. <- Deutsch.csv
+
+=== Felix Mendelssohn
+  Sort: Mendelssohn, Felix
+  Catalogue: Mendelssohn-Werke-Verzeichinis
+  alias_org: Jakob Ludwig Felix Mendelssohn Bartholdy
+  alias_de: 
+  alias_fr: 
+  alias_cn: 费利克斯·门德尔松
+  -> MWV <- MWV.csv
+
+=== Pyotr Ilyich Tchaikovsky
+  Sort: Tchaikovsky, Pyotr Ilyich
+  Catalogue: Tchaikovsky Handbook, Čajkovskij Works
+  alias_org: Пётр Ильич Чайковский
+  alias_de: Pjotr Iljitsch Tschaikowski
+  alias_fr: Piotr Ilitch Tchaïkovski
+  alias_cn: 彼得·伊里奇·柴可夫斯基
+  -> TH <- Tchaikovsky.csv
+
+=== Gustav Mahler
+  Sort: Mahler, Gustav
+  Catalogue: Gustav-Mahler-Werke
+  alias_org: 
+  alias_de: 
+  alias_fr: 
+  alias_cn: 古斯塔夫·马勒
+  -> GMW <- GMW.csv
+
+=== Maurice Ravel
+  Sort: Ravel, Maurice
+  Catalogue: Marnat catalogue
+  alias_org: Joseph Maurice Ravel
+  alias_de: 
+  alias_fr: 
+  alias_cn: 莫里斯·拉威尔
+  -> M. <- Marnat.csv
